@@ -24,6 +24,21 @@ class Title {
     }
 
     /**
+     * Find by internal ID
+     * @param {string} id
+     */
+    async findById(id) {
+        const { data, error } = await this.supabase
+            .from('cxv_title')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    /**
      * Find by ID including streams
      */
     async findByIdWithStreams(id) {
