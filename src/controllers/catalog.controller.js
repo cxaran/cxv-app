@@ -145,5 +145,133 @@ module.exports = {
     getTitle,
     saveTitle,
     deleteTitle,
-    deleteStream
+    deleteStream,
+    saveStream,
+    importMegaToTitle
+};
+
+// -- New Methods --
+
+async function saveStream(req, res) {
+    try {
+        const client = getClient(req);
+        const streamModel = new Stream(client);
+        const { id, ...data } = req.body;
+
+        let result;
+        if (id) {
+            result = await streamModel.update(id, data);
+        } else {
+            result = await streamModel.create(data);
+        }
+        res.json({ success: true, data: result });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+}
+
+const megaService = require('../services/mega.service');
+
+// ... imports ...
+const { resolveRealDebrid } = require('../services/realdebrid.service');
+
+async function importMegaToTitle(req, res) {
+    try {
+        const { id } = req.params;
+        const { url } = req.body;
+
+        if (!url) throw new Error("URL de Mega requerida");
+
+        const client = getClient(req);
+        const streamModel = new Stream(client);
+
+        // 1. Fetch files from Mega
+        const files = await megaService.fetchFiles(url);
+        if (!files || files.length === 0) throw new Error("No se encontraron archivos en el enlace.");
+
+        // 2. Process and Insert
+        const results = [];
+        for (const file of files) {
+            // Simple Parsing Logic for S/E
+            // Regex for S01E01, 1x01, etc.
+            const name = file.name;
+            let season = 0;
+            let episode = 0;
+
+            const seMatch = name.match(/[Ss](\d{1,2})[Ee](\d{1,2})/);
+            if (seMatch) {
+                season = parseInt(seMatch[1]);
+                episode = parseInt(seMatch[2]);
+            } else {
+                // Fallback: 1x01
+                const xMatch = name.match(/(\d{1,2})x(\d{1,2})/);
+                if (xMatch) {
+                    season = parseInt(xMatch[1]);
+                    episode = parseInt(xMatch[2]);
+                }
+            }
+
+            // If movie, maybe use priority based on quality (1080p etc)? 
+            // For now, default to 1. 
+
+            const streamData = {
+                titleId: id,
+                url: file.url,
+                label: file.name, // Use filename as fallback label
+                season: season,
+                episode: episode,
+                priority: 1,
+                isEnabled: true
+            };
+
+            // Use create (which handles duplicates)
+            const saved = await streamModel.create(streamData);
+            if (saved) results.push(saved);
+        }
+
+        res.json({ success: true, count: results.length, data: results });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+}
+
+async function streamContent(req, res) {
+    try {
+        const { id } = req.params;
+        const client = getClient(req); // Contains user token
+
+        // 1. Get Stream URL from DB
+        const { data: stream, error } = await client
+            .from('cxv_stream')
+            .select('url')
+            .eq('id', id)
+            .single();
+
+        if (error || !stream) throw new Error("Stream no encontrado");
+
+        // 2. Resolve via Real-Debrid
+        const finalUrl = await resolveRealDebrid(stream.url);
+
+        // 3. Redirect to the resolved URL
+        res.redirect(finalUrl);
+
+    } catch (e) {
+        console.error("Stream Error:", e);
+        res.status(500).send("Error al generar enlace de reproducción: " + e.message);
+    }
+}
+
+module.exports = {
+    getStats,
+    getCatalogData,
+    searchTitles,
+    getTitle,
+    saveTitle,
+    deleteTitle,
+    deleteStream,
+    saveStream,
+    importMegaToTitle,
+    streamContent
 };

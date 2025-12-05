@@ -107,7 +107,7 @@ class Title {
     async findRecent(limit = 10) {
         const { data, error } = await this.supabase
             .from('cxv_title')
-            .select('*')
+            .select('*, cxv_stream(count)')
             .order('created_at', { ascending: false })
             .limit(limit);
 
@@ -122,7 +122,7 @@ class Title {
         // Fetch a batch and pick random
         const { data } = await this.supabase
             .from('cxv_title')
-            .select('*')
+            .select('*, cxv_stream(count)')
             .eq('is_enabled', true)
             .limit(50);
 
@@ -138,7 +138,7 @@ class Title {
     async findAll({ type, search, limit = 50, offset = 0 }) {
         let query = this.supabase
             .from('cxv_title')
-            .select('*', { count: 'exact' });
+            .select('*, cxv_stream(count)', { count: 'exact' });
 
         if (type) query = query.eq('type', type);
         if (search) query = query.ilike('name', `%${search}%`);

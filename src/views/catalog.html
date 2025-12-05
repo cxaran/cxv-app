@@ -36,32 +36,45 @@
         .hero-gradient {
             background: linear-gradient(to top, #141414 10%, transparent 100%);
         }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 
 <body class="min-h-screen font-sans pb-20">
 
     <!-- Navbar -->
-    <div class="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3 flex flex-wrap justify-between items-center transition-all bg-black"
+    <div class="fixed top-0 w-full z-50 bg-gradient-to-b from-black/90 to-transparent px-4 py-3 flex flex-wrap justify-between items-center transition-all bg-black/80 backdrop-blur-sm"
         id="navbar">
         <h1 class="text-red-600 text-xl md:text-2xl font-bold tracking-tighter uppercase cursor-pointer"
             onclick="window.location.href='/dashboard'">cxv-app</h1>
 
-        <!-- Mobile Nav Toggle (Hidden specific implementation, simplified with scrollable or just stacking) -->
         <div class="flex gap-4 text-xs md:text-sm order-3 md:order-none w-full md:w-auto mt-2 md:mt-0 justify-center">
-            <a href="/dashboard" class="text-white opacity-80 hover:opacity-100">Inicio</a>
-            <a href="#" class="text-white font-bold">Catálogo</a>
-            <a href="/scan" class="text-white opacity-80 hover:opacity-100">Escanear</a>
+            <a href="/dashboard" class="text-white opacity-80 hover:opacity-100 transition">Inicio</a>
+            <a href="#" class="text-white font-bold border-b-2 border-red-600 pb-1">Catálogo</a>
+            <a href="/scan" class="text-white opacity-80 hover:opacity-100 transition">Escanear</a>
         </div>
 
         <div class="flex items-center gap-2 md:gap-4 order-2 md:order-none">
             <div
-                class="bg-black/50 border border-white/30 px-2 py-1 rounded flex items-center gap-2 focus-within:border-white">
+                class="bg-black/50 border border-white/30 px-2 py-1 rounded flex items-center gap-2 focus-within:border-white transition">
                 <i class="fa-solid fa-search text-gray-400 text-xs"></i>
                 <input type="text" id="searchInput" placeholder="Buscar..."
                     class="bg-transparent border-none outline-none text-white text-xs md:text-sm w-24 md:w-48 placeholder-gray-500">
             </div>
-            <button onclick="logout()" class="text-gray-400 hover:text-white"><i
+            <button onclick="logout()" class="text-gray-400 hover:text-white transition"><i
                     class="fa-solid fa-right-from-bracket"></i></button>
         </div>
     </div>
@@ -69,70 +82,88 @@
     <!-- Main Container -->
     <div id="mainContent">
         <!-- Hero Section -->
-        <div class="relative h-[60vh] md:h-[80vh] w-full bg-gray-900" id="heroSection">
-            <img id="heroImg" src="" class="w-full h-full object-cover opacity-60">
+        <div class="relative h-[55vh] md:h-[85vh] w-full bg-gray-900 group" id="heroSection">
+            <!-- Hero Background (Image OR Placeholder) -->
+            <div id="heroBg" class="w-full h-full relative">
+                <!-- Injected via JS -->
+            </div>
+
             <div class="absolute inset-0 hero-gradient"></div>
-            <div class="absolute bottom-[10%] md:bottom-[20%] left-[4%] max-w-xl pr-4">
-                <span class="text-red-600 font-bold tracking-widest uppercase text-xs sm:text-sm mb-2 block"
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+
+            <div class="absolute bottom-[10%] md:bottom-[20%] left-[4%] max-w-[90%] md:max-w-2xl pr-4 z-10 cursor-pointer group-hover:scale-[1.01] transition duration-300 pb-6"
+                onclick="editHero()">
+                <span
+                    class="text-red-500 font-extrabold tracking-widest uppercase text-[10px] md:text-sm mb-2 block animate-pulse"
                     id="heroType">DESTACADO</span>
-                <h1 class="text-3xl sm:text-5xl md:text-7xl font-bold mb-2 md:mb-4 leading-none" id="heroTitle">
-                    Cargando...</h1>
-                <p class="text-gray-300 text-xs sm:text-sm md:text-lg mb-4 md:mb-6 line-clamp-3 md:line-clamp-4"
-                    id="heroOverview">...</p>
-                <div class="flex gap-2 md:gap-4">
-                    <button
-                        class="bg-white text-black px-4 md:px-8 py-1.5 md:py-2 rounded font-bold hover:bg-gray-200 transition text-xs md:text-base"
-                        onclick="editHero()">
-                        <i class="fa-solid fa-pen mr-1 md:mr-2"></i> Editar
-                    </button>
-                    <button
-                        class="bg-gray-500/50 text-white px-4 md:px-8 py-1.5 md:py-2 rounded font-bold hover:bg-gray-500/70 transition text-xs md:text-base"
-                        onclick="deleteHero()">
-                        <i class="fa-solid fa-trash mr-1 md:mr-2"></i> Eliminar
-                    </button>
+                <h1 class="text-3xl sm:text-5xl md:text-7xl font-black mb-2 md:mb-4 leading-none tracking-tight drop-shadow-lg"
+                    id="heroTitle">Cargando...</h1>
+
+                <div class="flex items-center gap-2 mb-3 md:mb-4 text-xs md:text-sm font-semibold text-gray-300">
+                    <span id="heroYear" class="bg-gray-800 px-1.5 py-0.5 rounded text-white">...</span>
                 </div>
+
+                <p class="text-gray-300 text-xs sm:text-sm md:text-lg mb-4 md:mb-6 line-clamp-3 md:line-clamp-4 font-medium drop-shadow-md max-w-prose"
+                    id="heroOverview">...</p>
+
+                <!-- <div class="flex gap-2 md:gap-4">
+                    <button
+                        class="bg-white text-black px-5 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-gray-200 transition transform hover:scale-105 text-xs md:text-base flex items-center gap-2"
+                        onclick="editHero()">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button
+                        class="bg-gray-600/60 backdrop-blur-sm text-white px-5 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-gray-600/80 transition transform hover:scale-105 text-xs md:text-base flex items-center gap-2"
+                        onclick="deleteHero()">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
+                </div> -->
             </div>
         </div>
 
         <!-- Rows -->
-        <div class="pl-[4%] mt-[-100px] relative z-10 space-y-12 pb-10">
-
+        <div class="pl-[4%] mt-[-50px] md:mt-[-100px] relative z-20 space-y-8 md:space-y-12 pb-10">
             <!-- Recents -->
-            <div>
-                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group">
-                    Recientemente Agregados <span
-                        class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver todo
-                        ></span>
+            <section>
+                <h3
+                    class="text-base md:text-xl font-bold mb-3 md:mb-4 text-gray-200 hover:text-white cursor-pointer group flex items-center gap-2">
+                    Recientemente Agregados <i
+                        class="fa-solid fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition text-red-600"></i>
                 </h3>
-                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="recentRow"></div>
-            </div>
+                <div class="flex gap-2 md:gap-3 overflow-x-auto hide-scrollbar pt-4 pb-4 md:pb-8" id="recentRow"></div>
+            </section>
 
             <!-- Movies -->
-            <div>
-                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group"
+            <section>
+                <h3 class="text-base md:text-xl font-bold mb-3 md:mb-4 text-gray-200 hover:text-white cursor-pointer group flex items-center gap-2"
                     onclick="showGrid('movie')">
-                    Películas <span class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver
-                        todo ></span>
+                    Películas <i
+                        class="fa-solid fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition text-red-600"></i>
                 </h3>
-                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="moviesRow"></div>
-            </div>
+                <div class="flex gap-2 md:gap-3 overflow-x-auto hide-scrollbar pt-4 pb-4 md:pb-8" id="moviesRow"></div>
+            </section>
 
             <!-- Series -->
-            <div>
-                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group"
+            <section>
+                <h3 class="text-base md:text-xl font-bold mb-3 md:mb-4 text-gray-200 hover:text-white cursor-pointer group flex items-center gap-2"
                     onclick="showGrid('series')">
-                    Series <span class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver
-                        todo ></span>
+                    Series <i
+                        class="fa-solid fa-chevron-right text-xs opacity-0 group-hover:opacity-100 transition text-red-600"></i>
                 </h3>
-                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="seriesRow"></div>
-            </div>
+                <div class="flex gap-2 md:gap-3 overflow-x-auto hide-scrollbar pt-4 pb-4 md:pb-8" id="seriesRow"></div>
+            </section>
         </div>
     </div>
 
-    <!-- Search/Grid View (Hidden by default) -->
+    <!-- Grid View -->
     <div id="gridView" class="hidden pt-24 px-[4%] min-h-screen">
-        <h2 class="text-2xl font-bold mb-6" id="gridTitle">Resultados</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="gridContainer"></div>
+        <div class="flex items-center gap-4 mb-6">
+            <button onclick="showMain()" class="text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-arrow-left text-xl"></i></button>
+            <h2 class="text-2xl font-bold" id="gridTitle">Resultados</h2>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-6" id="gridContainer">
+        </div>
     </div>
 
     <script>
@@ -142,71 +173,135 @@
         let authToken = null;
         let heroItem = null;
 
+        // --- Helper: Colors ---
+        function getPlaceholderColor(title) {
+            const colors = [
+                'from-red-900 to-red-600', 'from-blue-900 to-blue-600', 'from-green-900 to-green-600',
+                'from-purple-900 to-purple-600', 'from-yellow-700 to-yellow-500', 'from-pink-900 to-pink-600'
+            ];
+            let hash = 0;
+            for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        // --- Helper: Robust Card HTML ---
+        function createCardHtml(item, isHero = false) {
+            const title = item.name || "Unknown";
+            const bgClass = getPlaceholderColor(title);
+            const posterUrl = item.poster_url || "";
+
+            // Stream Count Logic - Supabase returns [{ count: N }]
+            let streamCount = 0;
+            if (item.cxv_stream && item.cxv_stream[0] && typeof item.cxv_stream[0].count === 'number') {
+                streamCount = item.cxv_stream[0].count;
+            } else if (item.cxv_stream && typeof item.cxv_stream.length === 'number') {
+                // Fallback if it returned array of objects instead of count (unlikely with count query but safe)
+                streamCount = item.cxv_stream.length;
+            }
+
+            const isGrayscale = streamCount === 0;
+
+            // Safe Title for HTML
+            const safeTitle = title.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            if (isHero) {
+                return `
+                    <div class="w-full h-full relative overflow-hidden bg-gray-900">
+                        <div class="absolute inset-0 bg-gradient-to-br ${bgClass} flex items-center justify-center">
+                            <h1 class="text-[30vw] font-black text-white/5 select-none uppercase">${safeTitle.charAt(0)}</h1>
+                        </div>
+                        ${posterUrl ? `<img src="${posterUrl}" class="absolute inset-0 w-full h-full object-cover opacity-60 transition duration-700" 
+                            onload="this.style.opacity='0.6'" 
+                            onerror="this.style.display='none'">` : ''}
+                    </div>
+                `;
+            }
+
+            // Normal Card
+            return `
+                <div class="aspect-[2/3] relative w-full h-full bg-[#1a1a1a] overflow-hidden rounded shadow-lg group">
+                    <!-- Fallback Layer (Always there, behind image) -->
+                    <div class="absolute inset-0 bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-2 text-center z-0">
+                        <h3 class="text-xs md:text-sm font-black text-white uppercase leading-none drop-shadow-md break-words w-full px-1">${safeTitle}</h3>
+                    </div>
+                    
+                    <!-- Image Layer -->
+                    ${posterUrl ? `<img src="${posterUrl}" class="absolute inset-0 w-full h-full object-cover z-10 transition duration-300 group-hover:scale-110 ${isGrayscale ? 'grayscale' : ''}"
+                        onerror="this.style.display='none'">` : ''}
+                    
+                    <!-- Overlay (Gradient) - Only visible if we have a poster or just always on top? -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-100 z-20 pointer-events-none"></div>
+
+                    <!-- Text Overlay -->
+                    <div class="absolute bottom-0 left-0 w-full p-2 z-30">
+                        <h4 class="font-bold text-[10px] md:text-xs text-white truncate drop-shadow-md">${safeTitle}</h4>
+                        <div class="flex justify-between items-center text-[9px] text-gray-400">
+                            <span>${item.year || ''}</span>
+                            <div class="flex items-center gap-1 ${streamCount === 0 ? 'text-gray-600' : 'text-green-500'}">
+                                <i class="fa-solid fa-signal"></i> ${streamCount}
+                            </div>
+                        </div>
+                    </div>
+                     <!-- New Badge (3 days = 259200000 ms) -->
+                    ${(new Date() - new Date(item.created_at) < 259200000) ? '<div class="absolute top-1 right-1 bg-red-600 text-[8px] font-bold px-1 rounded z-30 shadow-md">NUEVO</div>' : ''}
+                </div>
+            `;
+        }
+
         async function init() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) { window.location.href = '/login'; return; }
             authToken = session.access_token;
-
             loadLanding();
         }
 
         async function loadLanding() {
-            const res = await fetch('/api/catalog/landing', { headers: { Authorization: `Bearer ${authToken}` } });
-            const { data } = await res.json();
-
-            if (data.hero) setupHero(data.hero);
-            renderRow('recentRow', data.recent);
-            renderRow('moviesRow', data.movies);
-            renderRow('seriesRow', data.series);
+            try {
+                const res = await fetch('/api/catalog/landing', { headers: { Authorization: `Bearer ${authToken}` } });
+                const { data } = await res.json();
+                if (data.hero) renderHero(data.hero);
+                renderRow('recentRow', data.recent);
+                renderRow('moviesRow', data.movies);
+                renderRow('seriesRow', data.series);
+            } catch (e) { console.error(e); }
         }
 
-        function setupHero(item) {
+        function renderHero(item) {
             heroItem = item;
-            document.getElementById('heroImg').src = item.poster_url || 'https://placehold.co/1920x1080/1a1a1a/FFF';
+            document.getElementById('heroBg').innerHTML = createCardHtml(item, true);
             document.getElementById('heroTitle').innerText = item.name;
-            document.getElementById('heroOverview').innerText = item.overview || "Sin descripción disponible.";
+            document.getElementById('heroOverview').innerText = item.overview || "Sin descripción.";
+            document.getElementById('heroYear').innerText = item.year || "2024";
             document.getElementById('heroType').innerText = item.type === 'movie' ? 'PELÍCULA' : 'SERIE';
         }
 
         function renderRow(containerId, items) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            if (!items) return;
             items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'flex-none w-[160px] md:w-[200px] movie-card cursor-pointer rounded-md overflow-hidden bg-[#222]';
-                card.onclick = () => window.location.href = `/editor/${item.id}`;
-                card.innerHTML = `
-                    <div class="aspect-[2/3] relative">
-                        <img src="${item.poster_url}" class="w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition flex flex-col justify-end p-2">
-                             <h4 class="font-bold text-xs text-white mb-1">${item.name}</h4>
-                             <span class="text-[10px] text-gray-300">${item.year || ''}</span>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
+                const el = document.createElement('div');
+                el.className = 'flex-none w-[140px] md:w-[200px] movie-card cursor-pointer rounded-md overflow-hidden bg-[#222]';
+                el.onclick = () => window.location.href = `/editor/${item.id}`;
+                el.innerHTML = createCardHtml(item);
+                container.appendChild(el);
             });
         }
 
-        // Search & Grid Logic
+        // Search & Grid
         const searchInput = document.getElementById('searchInput');
         let searchTimeout;
-
         searchInput.addEventListener('input', (e) => {
             clearTimeout(searchTimeout);
             const val = e.target.value;
-            if (val.length > 2) {
-                searchTimeout = setTimeout(() => doSearch(val), 500);
-            } else if (val.length === 0) {
-                showMain();
-            }
+            if (val.length > 2) searchTimeout = setTimeout(() => doSearch(val), 500);
+            else if (val.length === 0) showMain();
         });
 
         async function doSearch(q) {
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('gridView').classList.remove('hidden');
             document.getElementById('gridTitle').innerText = `Resultados para "${q}"`;
-
             const res = await fetch(`/api/catalog/search?q=${q}`, { headers: { Authorization: `Bearer ${authToken}` } });
             const { data } = await res.json();
             renderGrid(data.data);
@@ -216,12 +311,9 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('gridView').classList.remove('hidden');
-            document.getElementById('gridTitle').innerText = type === 'movie' ? "Todas las Películas" : "Todas las Series";
-
-            // Fetch all (paginated in real app, simplified here)
+            document.getElementById('gridTitle').innerText = type === 'movie' ? "Películas" : "Series";
             fetch(`/api/catalog/search?type=${type}&limit=100`, { headers: { Authorization: `Bearer ${authToken}` } })
-                .then(r => r.json())
-                .then(d => renderGrid(d.data.data));
+                .then(r => r.json()).then(d => renderGrid(d.data.data));
         }
 
         function showMain() {
@@ -232,28 +324,19 @@
         function renderGrid(items) {
             const container = document.getElementById('gridContainer');
             container.innerHTML = '';
+            if (!items) return;
             items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'aspect-[2/3] bg-[#222] rounded overflow-hidden cursor-pointer relative group';
-                card.onclick = () => window.location.href = `/editor/${item.id}`;
-                card.innerHTML = `
-                    <img src="${item.poster_url}" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition p-4 flex flex-col justify-center items-center text-center">
-                        <h4 class="font-bold text-white mb-2">${item.name}</h4>
-                        <button class="bg-red-600 text-white text-xs px-3 py-1 rounded">Editar</button>
-                    </div>
-                `;
-                container.appendChild(card);
+                const el = document.createElement('div');
+                el.className = 'group cursor-pointer transform transition duration-300 hover:scale-[1.03] hover:z-10 rounded overflow-hidden';
+                el.onclick = () => window.location.href = `/editor/${item.id}`;
+                el.innerHTML = createCardHtml(item);
+                container.appendChild(el);
             });
         }
 
-        function editHero() {
-            if (heroItem) window.location.href = `/editor/${heroItem.id}`;
-        }
-
+        function editHero() { if (heroItem) window.location.href = `/editor/${heroItem.id}`; }
         async function deleteHero() {
-            if (!heroItem) return;
-            if (!confirm(`¿Eliminar ${heroItem.name}?`)) return;
+            if (!heroItem || !confirm(`¿Eliminar ${heroItem.name}?`)) return;
             await fetch(`/api/catalog/title/${heroItem.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${authToken}` } });
             location.reload();
         }

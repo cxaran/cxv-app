@@ -47,6 +47,25 @@ class Stream {
         return data;
     }
 
+    async update(id, updates) {
+        const { data, error } = await this.supabase
+            .from('cxv_stream')
+            .update({
+                season: updates.season,
+                episode: updates.episode,
+                url: updates.url,
+                label: updates.label,
+                priority: updates.priority,
+                is_enabled: updates.isEnabled
+            })
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
     /**
      * Get total stream count.
      */

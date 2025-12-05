@@ -91,7 +91,7 @@ async function saveToDatabase(items, userToken) {
                         await streamModel.create({
                             titleId: titleData.id,
                             url: item.mega_url,
-                            label: `Mega - ${item.original_filename}`,
+                            label: `${item.original_filename}`,
                             season: item.season || null,
                             episode: item.episode || null,
                             priority: priority,

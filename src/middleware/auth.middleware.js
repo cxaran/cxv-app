@@ -8,15 +8,16 @@ const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
  */
 async function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
+    let token = null;
 
-    if (!authHeader) {
-        return res.status(401).json({ success: false, error: "No se proporcionó token de autenticación." });
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    } else if (req.query.token) {
+        token = req.query.token;
     }
 
-    const token = authHeader.split(' ')[1]; // Bearer <token>
-
     if (!token) {
-        return res.status(401).json({ success: false, error: "Formato de token inválido." });
+        return res.status(401).json({ success: false, error: "No se proporcionó token de autenticación válido." });
     }
 
     try {

@@ -156,6 +156,21 @@
             }
         }
 
+        // -- Placeholder Logic --
+        function getPlaceholderColor(title) {
+            const colors = [
+                'from-red-900 to-red-600',
+                'from-blue-900 to-blue-600',
+                'from-green-900 to-green-600',
+                'from-purple-900 to-purple-600',
+                'from-yellow-700 to-yellow-500',
+                'from-pink-900 to-pink-600'
+            ];
+            let hash = 0;
+            for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
         function renderRecent(items) {
             const grid = document.getElementById('recentGrid');
             grid.innerHTML = '';
@@ -167,21 +182,30 @@
 
             items.forEach(item => {
                 const el = document.createElement('div');
-                el.className = 'recent-card cursor-pointer';
-                // Simple navigation to editor (future implementation)
-                el.onclick = () => alert(`Editar ${item.name} (Próximamente)`);
+                el.className = 'recent-card cursor-pointer group relative';
+                el.onclick = () => window.location.href = `/editor/${item.id}`;
+
+                const bgClass = getPlaceholderColor(item.name || "Unknown");
+                const safeTitle = (item.name || "Unknown").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const posterUrl = item.poster_url || "";
 
                 el.innerHTML = `
-                    <div class="relative aspect-[2/3] rounded overflow-hidden mb-2">
-                        <img src="${item.poster_url || 'https://placehold.co/200x300'}" class="w-full h-full object-cover">
-                        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-2">
-                            <span class="text-[10px] font-bold uppercase tracking-wider ${item.type === 'movie' ? 'text-red-500' : 'text-blue-400'}">
+                    <div class="relative aspect-[2/3] rounded overflow-hidden mb-2 shadow-lg bg-[#222]">
+                        <!-- Fallback Layer -->
+                        <div class="absolute inset-0 bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-2 text-center z-0">
+                            <h3 class="text-xs font-black text-white uppercase leading-none drop-shadow-md break-words w-full px-1">${safeTitle}</h3>
+                        </div>
+
+                        <!-- Image Layer -->
+                        ${posterUrl ? `<img src="${posterUrl}" class="absolute inset-0 w-full h-full object-cover z-10 transition duration-300 group-hover:scale-110" onerror="this.style.display='none'">` : ''}
+                        
+                        <!-- Overlay -->
+                        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/90 to-transparent p-2 z-20">
+                             <span class="text-[9px] font-bold uppercase tracking-wider ${item.type === 'movie' ? 'text-red-500' : 'text-blue-400'}">
                                 ${item.type === 'movie' ? 'PELÍCULA' : 'SERIE'}
                             </span>
                         </div>
                     </div>
-                    <div class="text-xs font-bold truncate">${item.name}</div>
-                    <div class="text-[10px] text-gray-500">${new Date(item.created_at).toLocaleDateString()}</div>
                 `;
                 grid.appendChild(el);
             });
