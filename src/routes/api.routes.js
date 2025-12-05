@@ -19,6 +19,7 @@ router.get('/catalog/title/:id', authenticate, catalogController.getTitle);
 router.post('/catalog/title', authenticate, catalogController.saveTitle);
 router.delete('/catalog/title/:id', authenticate, catalogController.deleteTitle);
 router.post('/catalog/title/:id/import-mega', authenticate, catalogController.importMegaToTitle);
+router.post('/catalog/import-imdb', authenticate, catalogController.importFromImdb);
 
 router.post('/catalog/stream', authenticate, catalogController.saveStream);
 router.delete('/catalog/stream/:id', authenticate, catalogController.deleteStream);

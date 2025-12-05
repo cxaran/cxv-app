@@ -105,19 +105,6 @@
 
                 <p class="text-gray-300 text-xs sm:text-sm md:text-lg mb-4 md:mb-6 line-clamp-3 md:line-clamp-4 font-medium drop-shadow-md max-w-prose"
                     id="heroOverview">...</p>
-
-                <!-- <div class="flex gap-2 md:gap-4">
-                    <button
-                        class="bg-white text-black px-5 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-gray-200 transition transform hover:scale-105 text-xs md:text-base flex items-center gap-2"
-                        onclick="editHero()">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                    <button
-                        class="bg-gray-600/60 backdrop-blur-sm text-white px-5 md:px-8 py-2 md:py-3 rounded md:rounded-md font-bold hover:bg-gray-600/80 transition transform hover:scale-105 text-xs md:text-base flex items-center gap-2"
-                        onclick="deleteHero()">
-                        <i class="fa-solid fa-trash"></i> Eliminar
-                    </button>
-                </div> -->
             </div>
         </div>
 
@@ -163,6 +150,39 @@
             <h2 class="text-2xl font-bold" id="gridTitle">Resultados</h2>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-6" id="gridContainer">
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button onclick="openImportModal()"
+        class="fixed bottom-6 right-6 bg-red-600 hover:bg-red-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-xl z-40 transition transform hover:scale-110 active:scale-95 group">
+        <i class="fa-solid fa-plus group-hover:rotate-90 transition duration-300"></i>
+    </button>
+
+    <!-- Import Modal -->
+    <div id="importModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm fade-in">
+        <div
+            class="bg-gray-900/90 border border-white/10 rounded-xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100 relative">
+            <h3 class="text-xl font-bold mb-4 text-white">Importar Título</h3>
+            <p class="text-gray-400 text-sm mb-4">Ingresa el ID de IMDb del título (ej. <code
+                    class="text-red-400">tt0111161</code>). Se obtendrán los metadatos automáticamente.</p>
+
+            <input type="text" id="importImdbId" placeholder="IMDb ID (tt...)"
+                class="w-full bg-black/50 border border-gray-700 rounded-lg px-4 py-3 text-white mb-6 focus:border-red-600 focus:outline-none transition">
+
+            <div class="flex justify-end gap-3">
+                <button onclick="closeImportModal()"
+                    class="px-4 py-2 text-gray-400 hover:text-white transition">Cancelar</button>
+                <button onclick="importTitle()" id="btnImport"
+                    class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold shadow-lg transition transform hover:scale-105">
+                    Importar
+                </button>
+            </div>
+
+            <button onclick="closeImportModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
         </div>
     </div>
 
@@ -332,6 +352,48 @@
                 el.innerHTML = createCardHtml(item);
                 container.appendChild(el);
             });
+        }
+
+        // --- Import Modal Functions ---
+        function openImportModal() {
+            document.getElementById('importModal').classList.remove('hidden');
+            document.getElementById('importImdbId').focus();
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.add('hidden');
+            document.getElementById('importImdbId').value = '';
+        }
+
+        async function importTitle() {
+            const imdbId = document.getElementById('importImdbId').value.trim();
+            if (!imdbId) return alert('Por favor ingresa un ID de IMDb (ej. tt1234567)');
+
+            const btn = document.getElementById('btnImport');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Importando...';
+
+            try {
+                const res = await fetch('/api/catalog/import-imdb', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({ imdbId })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.message) alert(data.message); // e.g. "Title already exists"
+                    window.location.href = `/editor/${data.data.id}`;
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error de conexión: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         function editHero() { if (heroItem) window.location.href = `/editor/${heroItem.id}`; }

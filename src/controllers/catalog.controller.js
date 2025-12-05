@@ -173,6 +173,45 @@ async function saveStream(req, res) {
 const geminiService = require('../services/gemini.service');
 const megaService = require('../services/mega.service');
 const { resolveRealDebrid } = require('../services/realdebrid.service');
+const omdbService = require('../services/omdb.service');
+
+async function importFromImdb(req, res) {
+    try {
+        const { imdbId } = req.body;
+        if (!imdbId) throw new Error("ID de IMDb requerido");
+
+        const client = getClient(req);
+        const titleModel = new Title(client);
+
+        // Check if exists
+        const existing = await titleModel.findByImdb(imdbId);
+        if (existing) {
+            return res.json({ success: true, data: existing, message: "El título ya existe" });
+        }
+
+        // Fetch from OMDB
+        const metadata = await omdbService.fetchOmdbById(imdbId);
+        if (!metadata) throw new Error("No se encontró información en OMDb para este ID");
+
+        // Create
+        const newTitle = await titleModel.create({
+            imdbId: metadata.imdbId,
+            name: metadata.title,
+            originalName: metadata.title, // OMDB usually gives one title, stick to it
+            year: metadata.year,
+            poster: metadata.poster,
+            type: 'movie', // Default, OMDB might give 'series' but fetchOmdbById might not return it explicitly in the standardized object? let's check omdb service
+            overview: "Sinopsis no disponible (Editar manualmente)", // OMDB service in current code doesn't seem to return Plot?
+            isEnabled: true
+        });
+
+        res.json({ success: true, data: newTitle });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+}
 
 async function importMegaToTitle(req, res) {
     try {
@@ -290,5 +329,6 @@ module.exports = {
     deleteStream,
     saveStream,
     importMegaToTitle,
-    streamContent
+    streamContent,
+    importFromImdb
 };
