@@ -170,9 +170,8 @@ async function saveStream(req, res) {
     }
 }
 
+const geminiService = require('../services/gemini.service');
 const megaService = require('../services/mega.service');
-
-// ... imports ...
 const { resolveRealDebrid } = require('../services/realdebrid.service');
 
 async function importMegaToTitle(req, res) {
@@ -183,48 +182,66 @@ async function importMegaToTitle(req, res) {
         if (!url) throw new Error("URL de Mega requerida");
 
         const client = getClient(req);
+        const titleModel = new Title(client);
         const streamModel = new Stream(client);
+
+        // 0. Get Title Info for Hints & Type
+        const titleData = await titleModel.findById(id);
+        if (!titleData) throw new Error("Título no encontrado");
 
         // 1. Fetch files from Mega
         const files = await megaService.crawlMega(url);
         if (!files || files.length === 0) throw new Error("No se encontraron archivos en el enlace.");
 
-        // 2. Process and Insert
+        // 2. Sort by Size Descending (Priority Strategy)
+        // Largest file = Priority 1
+        files.sort((a, b) => (b.size || 0) - (a.size || 0));
+
+        // 3. Analyze with Gemini if Series
+        let aiAnalysis = [];
+        if (titleData.type === 'series') {
+            const hints = {
+                title: titleData.name,
+                year: titleData.year,
+                context: "Archivos importados para un título existente"
+            };
+            // Map clean names for AI
+            aiAnalysis = await geminiService.analyzeWithGemini(files, 'series', hints);
+        }
+
+        // 4. Process and Insert
         const results = [];
-        for (const file of files) {
-            // Simple Parsing Logic for S/E
-            // Regex for S01E01, 1x01, etc.
-            const name = file.fileName;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const analysis = aiAnalysis[i] || {};
+
             let season = 0;
             let episode = 0;
 
-            const seMatch = name.match(/[Ss](\d{1,2})[Ee](\d{1,2})/);
-            if (seMatch) {
-                season = parseInt(seMatch[1]);
-                episode = parseInt(seMatch[2]);
-            } else {
-                // Fallback: 1x01
-                const xMatch = name.match(/(\d{1,2})x(\d{1,2})/);
-                if (xMatch) {
-                    season = parseInt(xMatch[1]);
-                    episode = parseInt(xMatch[2]);
+            if (titleData.type === 'series') {
+                season = analysis.season || 0;
+                episode = analysis.episode || 0;
+
+                // Fallback Regex if Gemini failed
+                if (season === 0 && episode === 0) {
+                    const seMatch = file.fileName.match(/[Ss](\d{1,2})[Ee](\d{1,2})/);
+                    if (seMatch) {
+                        season = parseInt(seMatch[1]);
+                        episode = parseInt(seMatch[2]);
+                    }
                 }
             }
-
-            // If movie, maybe use priority based on quality (1080p etc)? 
-            // For now, default to 1. 
 
             const streamData = {
                 titleId: id,
                 url: file.megaUrl,
-                label: file.fileName, // Use filename as fallback label
+                label: file.fileName,
                 season: season,
                 episode: episode,
-                priority: 1,
+                priority: i + 1, // 1 is highest priority (largest file)
                 isEnabled: true
             };
 
-            // Use create (which handles duplicates)
             const saved = await streamModel.create(streamData);
             if (saved) results.push(saved);
         }
