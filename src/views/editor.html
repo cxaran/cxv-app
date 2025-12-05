@@ -10,29 +10,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #0F0F0F;
-            color: #E5E5E5;
-            font-family: 'Inter', sans-serif;
-        }
-
-        /* Glassmorphism Utilities */
-        .glass {
-            background: rgba(30, 30, 30, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .input-dark {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            transition: all 0.3s ease;
-        }
-
-        .input-dark:focus {
-            border-color: #666;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+            background-color: #141414;
+            color: white;
         }
 
         .hide-scrollbar::-webkit-scrollbar {
@@ -43,470 +22,449 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-
-        /* Table Styling */
-        .premium-table th {
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            color: #888;
-        }
-
-        .premium-table tr:hover td {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .btn-icon {
-            width: 36px;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover {
-            transform: translateY(-1px);
-        }
     </style>
 </head>
 
-<body class="min-h-screen pb-20">
+<body class="min-h-screen font-sans pb-20 p-4 md:p-8 max-w-5xl mx-auto">
 
-    <!-- Sticky Header -->
-    <header class="sticky top-0 z-50 glass border-b-0 border-b-gray-800 mb-8">
-        <div class="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-3">
-                <a href="/catalog" class="text-gray-400 hover:text-white transition"><i
-                        class="fa-solid fa-arrow-left"></i></a>
-                Editor de Título
-            </h1>
-            <div class="flex gap-3">
-                <a href="/catalog"
-                    class="hidden md:flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-white/10 transition">Calculado</a>
-                <button onclick="save()"
-                    class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold text-sm shadow-lg shadow-blue-900/20 transition transform hover:scale-105">
-                    <i class="fa-solid fa-save mr-2"></i> Guardar
-                    </main>
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 border-b border-gray-800 pb-4 gap-4">
+        <h1 class="text-2xl md:text-3xl font-bold">Editor de Título</h1>
+        <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="save()"
+                class="flex-1 md:flex-none bg-red-600 text-white px-4 md:px-6 py-2 rounded font-bold hover:bg-red-700 text-sm md:text-base">Guardar</button>
+            <a href="/catalog"
+                class="flex-1 md:flex-none bg-gray-700 text-white px-4 md:px-6 py-2 rounded font-bold hover:bg-gray-600 text-center text-sm md:text-base">Cancelar</a>
+        </div>
+    </div>
 
-                    <!-- Modals (Re-styled) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <!-- Preview -->
+        <div>
+            <label class="block text-gray-400 text-sm mb-1">Vista Previa</label>
+            <div id="posterPreviewContainer"
+                class="aspect-[2/3] bg-[#222] rounded overflow-hidden border border-gray-700 w-1/2 md:w-full mx-auto md:mx-0">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+        <!-- Metadata Form -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Nombre</label>
+                    <input type="text" id="name" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Nombre Original</label>
+                    <input type="text" id="originalName"
+                        class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">IMDb ID</label>
+                    <input type="text" id="imdbId"
+                        class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white font-mono">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Año</label>
+                    <input type="number" id="year"
+                        class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Tipo</label>
+                    <select id="type" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white"
+                        onchange="renderStreams()">
+                        <option value="movie">Película</option>
+                        <option value="series">Serie</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Estado</label>
+                    <select id="isEnabled" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                        <option value="true">Activo</option>
+                        <option value="false">Oculto</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-gray-400 text-sm mb-1">Poster URL</label>
+                <input type="text" id="poster" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white"
+                    onchange="updatePreview()">
+            </div>
+            <div>
+                <label class="block text-gray-400 text-sm mb-1">Sinopsis</label>
+                <textarea id="overview" rows="5"
+                    class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white"></textarea>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Mega Modal -->
-                    <div id="megaModal"
-                        class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-all">
-                        <div
-                            class="bg-[#151515] border border-gray-800 p-8 rounded-2xl max-w-lg w-full shadow-2xl relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-900">
-                            </div>
-                            <h3 class="text-2xl font-bold mb-2 flex items-center gap-2"><i
-                                    class="fa-solid fa-cloud text-red-600"></i>
-                                Importar Mega</h3>
-                            <p class="text-gray-400 text-sm mb-6">Introduce el enlace. Detectaremos temporadas y
-                                episodios
-                                automáticamente.</p>
+    <!-- Streams Section -->
+    <div class="mt-12">
+        <div class="flex flex-wrap justify-between items-end mb-4 border-b border-gray-800 pb-2 gap-2">
+            <h2 class="text-xl font-bold">Streams / Enlaces</h2>
+            <div class="flex gap-2">
+                <button onclick="openMegaModal()"
+                    class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                    <i class="fa-solid fa-cloud-arrow-down mr-2"></i> Importar Mega
+                </button>
+                <button onclick="openStreamModal()"
+                    class="bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-600">
+                    <i class="fa-solid fa-plus mr-2"></i> Manual
+                </button>
+            </div>
+        </div>
 
-                            <div class="space-y-4">
-                                <input type="text" id="megaUrlInput" placeholder="https://mega.nz/..."
-                                    class="w-full input-dark rounded-lg p-3 text-white text-sm focus:ring-2 focus:ring-red-900 focus:border-red-600">
+        <div id="streamsContainer" class="space-y-4">
+            <!-- Injected via JS -->
+        </div>
 
-                                <div class="flex justify-end gap-3 pt-2">
-                                    <button onclick="closeMegaModal()"
-                                        class="px-5 py-2 hover:bg-white/5 rounded-lg text-gray-300 font-medium transition">Cancelar</button>
-                                    <button onclick="doImportMega()"
-                                        class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-red-900/30 transition transform hover:scale-105"
-                                        id="btnImport">
-                                        Importar Ahora
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+        <div id="noStreams" class="text-gray-500 text-center py-4 hidden">No hay streams asociados.</div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Mega Import Modal -->
+    <div id="megaModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#222] p-6 rounded-lg max-w-lg w-full">
+            <h3 class="text-xl font-bold mb-4">Importar desde Mega</h3>
+            <p class="text-gray-400 text-sm mb-4">Introduce el enlace de archivo o carpeta de Mega. Se intentará
+                detectar automáticamente Temporada y Episodio si es una serie.</p>
+            <input type="text" id="megaUrlInput" placeholder="https://mega.nz/..."
+                class="w-full bg-black border border-gray-700 rounded p-2 text-white mb-4">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeMegaModal()" class="px-4 py-2 hover:bg-white/10 rounded">Cancelar</button>
+                <button onclick="doImportMega()" class="bg-blue-600 px-4 py-2 rounded font-bold hover:bg-blue-700"
+                    id="btnImport">Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit/Add Stream Modal -->
+    <div id="streamModal" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-[#222] p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4" id="streamModalTitle">Editar Stream</h3>
+            <input type="hidden" id="editStreamId">
+            <div class="space-y-3">
+                <div>
+                    <label class="text-xs text-gray-500">Etiqueta (Nombre archivo)</label>
+                    <input type="text" id="editLabel"
+                        class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm">
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">URL</label>
+                    <input type="text" id="editUrl"
+                        class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-500">Temporada</label>
+                        <input type="number" id="editSeason"
+                            class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm">
                     </div>
-
-                    <!-- Stream Edit Modal -->
-                    <div id="streamModal"
-                        class="fixed inset-0 bg-black/90 hidden z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
-                        <div
-                            class="bg-[#151515] border border-gray-800 p-8 rounded-2xl max-w-md w-full shadow-2xl relative">
-                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-blue-900">
-                            </div>
-                            <h3 class="text-xl font-bold mb-6 flex items-center gap-2" id="streamModalTitle">Editar
-                                Stream</h3>
-                            <input type="hidden" id="editStreamId">
-
-                            <div class="space-y-4">
-                                <div class="space-y-1">
-                                    <label class="text-xs text-gray-500 uppercase font-semibold">Etiqueta</label>
-                                    <input type="text" id="editLabel"
-                                        class="w-full input-dark rounded-lg p-3 text-white text-sm">
-                                </div>
-                                <div class="space-y-1">
-                                    <label class="text-xs text-gray-500 uppercase font-semibold">URL Directa</label>
-                                    <input type="text" id="editUrl"
-                                        class="w-full input-dark rounded-lg p-3 text-white text-sm font-mono text-xs">
-                                </div>
-                                <div class="grid grid-cols-3 gap-3">
-                                    <div class="space-y-1">
-                                        <label class="text-xs text-gray-500 uppercase font-semibold">Temp.</label>
-                                        <input type="number" id="editSeason"
-                                            class="w-full input-dark rounded-lg p-3 text-white text-center">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-xs text-gray-500 uppercase font-semibold">Episodio</label>
-                                        <input type="number" id="editEpisode"
-                                            class="w-full input-dark rounded-lg p-3 text-white text-center">
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label class="text-xs text-gray-500 uppercase font-semibold">Prioridad</label>
-                                        <input type="number" id="editPriority"
-                                            class="w-full input-dark rounded-lg p-3 text-white text-center">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-end gap-3 mt-8">
-                                <button onclick="closeStreamModal()"
-                                    class="px-5 py-2 hover:bg-white/5 rounded-lg text-gray-300 font-medium transition">Cancelar</button>
-                                <button onclick="saveStream()"
-                                    class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold shadow-lg shadow-blue-900/30 transition">Guardar
-                                    Cambios</button>
-                            </div>
-                        </div>
+                    <div>
+                        <label class="text-xs text-gray-500">Episodio</label>
+                        <input type="number" id="editEpisode"
+                            class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm">
                     </div>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500">Prioridad</label>
+                    <input type="number" id="editPriority"
+                        class="w-full bg-black border border-gray-700 rounded p-2 text-white text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+                <button onclick="closeStreamModal()" class="px-4 py-2 hover:bg-white/10 rounded">Cancelar</button>
+                <button onclick="saveStream()"
+                    class="bg-red-600 px-4 py-2 rounded font-bold hover:bg-red-700">Guardar</button>
+            </div>
+        </div>
+    </div>
 
-                    <script>
-                        const SUPABASE_URL = '{{SUPABASE_URL}}';
-                        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
-                        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                        let authToken = null;
-                        let currentStreams = [];
-                        let activeSeason = null;
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let authToken = null;
+        let currentStreams = [];
+        let activeSeason = null;
 
-                        const paths = window.location.pathname.split('/');
-                        const id = paths[paths.length - 1];
+        // ID from URL: /editor/:id
+        const paths = window.location.pathname.split('/');
+        const id = paths[paths.length - 1];
 
-                        async function init() {
-                            const { data: { session } } = await supabase.auth.getSession();
-                            if (!session) { window.location.href = '/login'; return; }
-                            authToken = session.access_token;
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+            authToken = session.access_token;
 
-                            if (id && id !== 'editor') {
-                                loadData(id);
-                            }
-                        }
+            if (id && id !== 'editor') {
+                loadData(id);
+            }
+        }
 
-                        async function loadData(titleId) {
-                            const res = await fetch(`/api/catalog/title/${titleId}`, { headers: { Authorization: `Bearer ${authToken}` } });
-                            const { data } = await res.json();
+        async function loadData(titleId) {
+            const res = await fetch(`/api/catalog/title/${titleId}`, { headers: { Authorization: `Bearer ${authToken}` } });
+            const { data } = await res.json();
 
-                            document.getElementById('name').value = data.name;
-                            document.getElementById('originalName').value = data.original_name || '';
-                            document.getElementById('year').value = data.year;
-                            document.getElementById('imdbId').value = data.imdb_id || '';
-                            document.getElementById('type').value = data.type;
-                            document.getElementById('isEnabled').value = data.is_enabled;
-                            document.getElementById('poster').value = data.poster_url;
-                            document.getElementById('overview').value = data.overview || '';
+            document.getElementById('name').value = data.name;
+            document.getElementById('originalName').value = data.original_name || '';
+            document.getElementById('year').value = data.year;
+            document.getElementById('imdbId').value = data.imdb_id || '';
+            document.getElementById('type').value = data.type;
+            document.getElementById('isEnabled').value = data.is_enabled;
+            document.getElementById('poster').value = data.poster_url;
+            document.getElementById('overview').value = data.overview || '';
 
-                            updatePreview();
-                            currentStreams = data.cxv_stream || [];
-                            renderStreams();
-                        }
+            updatePreview();
+            currentStreams = data.cxv_stream || [];
+            renderStreams();
+        }
 
-                        function updatePreview() {
-                            const url = document.getElementById('poster').value;
-                            const name = document.getElementById('name').value || 'TITULO';
-                            const container = document.getElementById('posterPreviewContainer');
+        function updatePreview() {
+            const url = document.getElementById('poster').value;
+            const name = document.getElementById('name').value || 'TITULO';
+            const container = document.getElementById('posterPreviewContainer');
 
-                            const colors = ['from-red-900 to-red-600', 'from-blue-900 to-blue-600', 'from-purple-900 to-purple-600'];
-                            let hash = 0;
-                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                            const bgClass = colors[Math.abs(hash) % colors.length];
+            // Helper for colors
+            const colors = ['from-red-900 to-red-600', 'from-blue-900 to-blue-600', 'from-purple-900 to-purple-600'];
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            const bgClass = colors[Math.abs(hash) % colors.length];
 
-                            if (url && url.length > 5) {
-                                container.innerHTML = `<img src="${url}" class="w-full h-full object-cover transition duration-500 transform group-hover:scale-105" 
-                    onerror="this.parentElement.innerHTML='<div class=\\'w-full h-full bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-6 text-center\\'><h1 class=\\'text-4xl font-black text-white/20 uppercase select-none\\'>${name.charAt(0)}</h1></div>'">`;
-                            } else {
-                                container.innerHTML = `<div class="w-full h-full bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-6 text-center">
-                    <h1 class="text-4xl font-black text-white/20 uppercase select-none">${name.charAt(0)}</h1>
+            if (url && url.length > 5) {
+                container.innerHTML = `<img src="${url}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\\'w-full h-full bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-4 text-center\\'><h1 class=\\'text-3xl font-black text-white uppercase drop-shadow-xl\\'>${name}</h1></div>'">`;
+            } else {
+                container.innerHTML = `<div class="w-full h-full bg-gradient-to-br ${bgClass} flex flex-col items-center justify-center p-4 text-center">
+                    <h1 class="text-3xl font-black text-white uppercase drop-shadow-xl">${name}</h1>
                 </div>`;
-                            }
-                        }
+            }
+        }
 
-                        function renderStreams() {
-                            const container = document.getElementById('streamsContainer');
-                            container.innerHTML = '';
+        function renderStreams() {
+            const container = document.getElementById('streamsContainer');
+            container.innerHTML = '';
 
-                            if (!currentStreams || currentStreams.length === 0) {
-                                document.getElementById('noStreams').classList.remove('hidden');
-                                return;
-                            } else {
-                                document.getElementById('noStreams').classList.add('hidden');
-                            }
+            if (!currentStreams || currentStreams.length === 0) {
+                document.getElementById('noStreams').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('noStreams').classList.add('hidden');
+            }
 
-                            const type = document.getElementById('type').value;
+            const type = document.getElementById('type').value;
 
-                            // --- Render Logic ---
-                            if (type === 'series') {
-                                const seasons = {};
-                                currentStreams.forEach(s => {
-                                    const se = s.season || 0;
-                                    if (!seasons[se]) seasons[se] = [];
-                                    seasons[se].push(s);
-                                });
+            if (type === 'series') {
+                // Group by Season
+                const seasons = {};
+                currentStreams.forEach(s => {
+                    const se = s.season || 0;
+                    if (!seasons[se]) seasons[se] = [];
+                    seasons[se].push(s);
+                });
 
-                                const seasonKeys = Object.keys(seasons).sort((a, b) => a - b);
-                                if (seasonKeys.length === 0) return;
+                const seasonKeys = Object.keys(seasons).sort((a, b) => a - b);
+                if (seasonKeys.length === 0) return;
 
-                                if (!activeSeason || !seasons[activeSeason]) {
-                                    activeSeason = seasonKeys[0];
-                                }
+                if (!activeSeason || !seasons[activeSeason]) {
+                    activeSeason = seasonKeys[0];
+                }
 
-                                // Season Tabs
-                                const tabsNav = document.createElement('nav');
-                                tabsNav.className = "flex gap-2 mb-6 overflow-x-auto pb-2 hide-scrollbar border-b border-gray-800";
+                // 1. Tab Headers
+                const tabsContainer = document.createElement('div');
+                tabsContainer.className = "flex gap-2 overflow-x-auto border-b border-gray-800 pb-2 mb-4 hide-scrollbar";
 
-                                seasonKeys.forEach(sKey => {
-                                    const isActive = sKey === activeSeason;
-                                    const btn = document.createElement('button');
-                                    btn.className = `px-5 py-2.5 rounded-t-lg font-bold text-sm whitespace-nowrap transition border-b-2 ${isActive
-                                        ? 'text-white border-blue-500 bg-white/5'
-                                        : 'text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-700'}`;
-                                    btn.innerText = sKey === '0' ? 'Extras' : `Temporada ${sKey}`;
-                                    btn.onclick = () => { activeSeason = sKey; renderStreams(); };
-                                    tabsNav.appendChild(btn);
-                                });
-                                container.appendChild(tabsNav);
+                seasonKeys.forEach(sKey => {
+                    const btn = document.createElement('button');
+                    const isActive = sKey === activeSeason;
+                    btn.className = `px-4 py-2 rounded font-bold text-sm whitespace-nowrap transition ${isActive ? 'bg-red-600 text-white' : 'bg-[#222] text-gray-400 hover:text-white'
+                        }`;
+                    btn.innerText = sKey === '0' ? 'Extras' : `Temporada ${sKey}`;
+                    btn.onclick = () => {
+                        activeSeason = sKey;
+                        renderStreams(); // Re-render to update active content
+                    };
+                    tabsContainer.appendChild(btn);
+                });
+                container.appendChild(tabsContainer);
 
-                                // Table
-                                const episodes = seasons[activeSeason].sort((a, b) => a.episode - b.episode);
-                                const tableContainer = document.createElement('div');
-                                tableContainer.className = "overflow-hidden rounded-xl border border-gray-800 bg-[#121212]";
-
-                                const table = document.createElement('table');
-                                table.className = "w-full text-left premium-table";
-                                table.innerHTML = `
-                    <thead class="bg-[#181818] border-b border-gray-800">
-                        <tr>
-                            <th class="p-4 w-20 text-center">Ep.</th>
-                            <th class="p-4">Información</th>
-                            <th class="p-4 text-right">Acciones</th>
-                        </tr>
+                // 2. Content (Active Season Episodes)
+                const seasonEpisodes = seasons[activeSeason];
+                const table = document.createElement('table');
+                table.className = "w-full text-left border-collapse text-sm bg-[#1a1a1a] rounded overflow-hidden";
+                table.innerHTML = `
+                    <thead class="bg-black/20 text-gray-500 border-b border-gray-800">
+                        <tr><th class="p-3">Episodio</th><th class="p-3">Etiqueta</th><th class="p-3 text-right">Acciones</th></tr>
                     </thead>
                 `;
-                                const tbody = document.createElement('tbody');
+                const tbody = document.createElement('tbody');
 
-                                episodes.forEach(s => {
-                                    const tr = document.createElement('tr');
-                                    tr.className = "border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors";
-                                    tr.innerHTML = `
-                        <td class="p-4 text-center">
-                            <span class="text-lg font-bold text-gray-400 bg-gray-800/50 w-10 h-10 flex items-center justify-center rounded-full mx-auto">${s.episode}</span>
-                        </td>
-                        <td class="p-4" title="${s.url}">
-                            <div class="font-semibold text-white mb-1 truncate max-w-[250px] md:max-w-md">${s.label}</div>
-                            <div class="flex items-center gap-2">
-                                <span class="bg-blue-900/30 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-900/50 font-mono">LINK</span>
-                                <span class="text-xs text-gray-500 font-mono truncate max-w-[150px] cursor-pointer hover:text-blue-400" onclick="window.open('${s.url}', '_blank')">${s.url}</span>
-                            </div>
-                        </td>
-                        <td class="p-4">
-                            <div class="flex items-center justify-end gap-3">
-                                <button onclick="window.open('/api/catalog/stream/${s.id}/play?token=' + authToken, '_blank')" 
-                                    class="btn-icon bg-green-600/10 text-green-500 hover:bg-green-600 hover:text-white border border-green-900/30" title="Reproducir Premium">
-                                    <i class="fa-solid fa-play"></i>
-                                </button>
-                                <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' 
-                                    class="btn-icon bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700" title="Editar">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button onclick="deleteStream('${s.id}')" 
-                                    class="btn-icon bg-red-900/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-900/30" title="Eliminar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
-                                    tbody.appendChild(tr);
-                                });
-                                table.appendChild(tbody);
-                                tableContainer.appendChild(table);
-                                container.appendChild(tableContainer);
+                if (seasonEpisodes) {
+                    seasonEpisodes.sort((a, b) => (a.episode - b.episode)).forEach(s => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-800/50 hover:bg-white/5";
+                        tr.innerHTML = `
+                            <td class="p-3 w-20 text-center font-bold text-xl text-gray-500">${s.episode}</td>
+                            <td class="p-3 truncate max-w-[200px]" title="${s.url}">
+                                <div class="font-bold text-white mb-1">${s.label}</div>
+                                <div class="text-[10px] text-blue-400 cursor-pointer hover:underline font-mono truncate" onclick="window.open('${s.url}', '_blank')">${s.url}</div>
+                            </td>
+                            <td class="p-3 text-right gap-2">
+                                <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-2 transition"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteStream('${s.id}')" class="bg-red-900/50 hover:bg-red-600 text-white p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                            </td>
+                         `;
+                        tbody.appendChild(tr);
+                    });
+                }
+                table.appendChild(tbody);
+                container.appendChild(table);
 
-                            } else {
-                                // Movie
-                                const tableContainer = document.createElement('div');
-                                tableContainer.className = "overflow-hidden rounded-xl border border-gray-800 bg-[#121212]";
-
-                                const table = document.createElement('table');
-                                table.className = "w-full text-left premium-table";
-                                table.innerHTML = `
-                    <thead class="bg-[#181818] border-b border-gray-800">
-                        <tr>
-                            <th class="p-4">Etiqueta</th>
-                            <th class="p-4 w-1/3">URL</th>
-                            <th class="p-4 text-right">Acciones</th>
-                        </tr>
+            } else {
+                // Movie Stream Table
+                const table = document.createElement('table');
+                table.className = "w-full text-left border-collapse";
+                table.innerHTML = `
+                    <thead class="text-gray-400 text-sm border-b border-gray-800">
+                        <tr><th class="py-2">Etiqueta</th><th class="py-2">URL</th><th class="py-2 text-right">Acciones</th></tr>
                     </thead>
                 `;
-                                const tbody = document.createElement('tbody');
-
-                                currentStreams.forEach(s => {
-                                    const tr = document.createElement('tr');
-                                    tr.className = "border-b border-gray-800/50 hover:bg-[#1a1a1a] transition-colors";
-                                    tr.innerHTML = `
-                         <td class="p-4 font-medium text-white">${s.label}</td>
-                         <td class="p-4">
-                            <span class="text-xs text-gray-500 font-mono truncate block max-w-[200px] cursor-pointer hover:text-blue-400 decoration-dotted underline" onclick="window.open('${s.url}', '_blank')">
-                                ${s.url}
-                            </span>
-                         </td>
-                         <td class="p-4">
-                            <div class="flex items-center justify-end gap-3">
-                                <button onclick="window.open('/api/catalog/stream/${s.id}/play?token=' + authToken, '_blank')" 
-                                    class="btn-icon bg-green-600/10 text-green-500 hover:bg-green-600 hover:text-white border border-green-900/30" title="Reproducir Premium">
-                                    <i class="fa-solid fa-play"></i>
-                                </button>
-                                <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' 
-                                    class="btn-icon bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white border border-gray-700" title="Editar">
-                                    <i class="fa-solid fa-pen"></i>
-                                </button>
-                                <button onclick="deleteStream('${s.id}')" 
-                                    class="btn-icon bg-red-900/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-900/30" title="Eliminar">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                         </td>
+                const tbody = document.createElement('tbody');
+                currentStreams.forEach(s => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-800 hover:bg-[#222] transition';
+                    tr.innerHTML = `
+                        <td class="py-3 text-sm font-bold">${s.label}</td>
+                        <td class="py-3 text-sm font-mono truncate max-w-xs text-blue-400 cursor-pointer hover:underline" onclick="window.open('${s.url}', '_blank')">${s.url}</td>
+                        <td class="py-3 text-right">
+                             <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-2 transition"><i class="fa-solid fa-pen"></i></button>
+                             <button onclick="deleteStream('${s.id}')" class="bg-red-900/50 hover:bg-red-600 text-white p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
+                        </td>
                     `;
-                                    tbody.appendChild(tr);
-                                });
-                                table.appendChild(tbody);
-                                tableContainer.appendChild(table);
-                                container.appendChild(tableContainer);
-                            }
-                        }
+                    tbody.appendChild(tr);
+                });
+                table.append(tbody);
+                container.appendChild(table);
+            }
+        }
 
-                        // Functions (Logic remains mostly same, just UI updates)
-                        async function save() {
-                            // ... same logic 
-                            const body = {
-                                id: (id && id !== 'editor') ? id : undefined,
-                                name: document.getElementById('name').value,
-                                originalName: document.getElementById('originalName').value,
-                                year: document.getElementById('year').value,
-                                imdbId: document.getElementById('imdbId').value,
-                                type: document.getElementById('type').value,
-                                isEnabled: document.getElementById('isEnabled').value === 'true',
-                                poster: document.getElementById('poster').value,
-                                overview: document.getElementById('overview').value
-                            };
+        async function save() {
+            const body = {
+                id: (id && id !== 'editor') ? id : undefined,
+                name: document.getElementById('name').value,
+                originalName: document.getElementById('originalName').value,
+                year: document.getElementById('year').value,
+                imdbId: document.getElementById('imdbId').value,
+                type: document.getElementById('type').value,
+                isEnabled: document.getElementById('isEnabled').value === 'true',
+                poster: document.getElementById('poster').value,
+                overview: document.getElementById('overview').value
+            };
 
-                            const res = await fetch('/api/catalog/title', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                                body: JSON.stringify(body)
-                            });
+            const res = await fetch('/api/catalog/title', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                body: JSON.stringify(body)
+            });
 
-                            const result = await res.json();
-                            if (result.success) {
-                                // Show toast or alert
-                                alert('Guardado correctamente'); // For now simple alert
-                                if (!id || id === 'editor') window.location.href = `/editor/${result.data.id}`;
-                            } else {
-                                alert('Error: ' + result.error);
-                            }
-                        }
+            const result = await res.json();
+            if (result.success) {
+                alert('Guardado correctamente');
+                if (!id || id === 'editor') window.location.href = `/editor/${result.data.id}`;
+            } else {
+                alert('Error: ' + result.error);
+            }
+        }
 
-                        function openMegaModal() { document.getElementById('megaModal').classList.remove('hidden'); }
-                        function closeMegaModal() { document.getElementById('megaModal').classList.add('hidden'); }
+        // --- Stream Logic ---
+        function openMegaModal() { document.getElementById('megaModal').classList.remove('hidden'); }
+        function closeMegaModal() { document.getElementById('megaModal').classList.add('hidden'); }
 
-                        async function doImportMega() {
-                            // ... same logic ...
-                            const url = document.getElementById('megaUrlInput').value;
-                            if (!url) return alert("URL vacía");
-                            if (!id || id === 'editor') return alert("Guarda el título antes de agregar streams.");
+        async function doImportMega() {
+            const url = document.getElementById('megaUrlInput').value;
+            if (!url) return alert("URL vacía");
+            if (!id || id === 'editor') return alert("Guarda el título antes de agregar streams.");
 
-                            const btn = document.getElementById('btnImport');
-                            const originalText = btn.innerText;
-                            btn.innerText = "Procesando...";
-                            btn.disabled = true;
+            const btn = document.getElementById('btnImport');
+            btn.innerText = "Procesando...";
+            btn.disabled = true;
 
-                            try {
-                                const res = await fetch(`/api/catalog/title/${id}/import-mega`, {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                                    body: JSON.stringify({ url })
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                    alert(`Importados ${data.count} archivos.`);
-                                    closeMegaModal();
-                                    loadData(id);
-                                } else {
-                                    alert("Error: " + data.error);
-                                }
-                            } catch (e) { console.error(e); alert("Error de red"); }
+            try {
+                const res = await fetch(`/api/catalog/title/${id}/import-mega`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(`Importados ${data.count} archivos.`);
+                    closeMegaModal();
+                    loadData(id); // Reload
+                } else {
+                    alert("Error: " + data.error);
+                }
+            } catch (e) { console.error(e); alert("Error de red"); }
 
-                            btn.innerText = originalText;
-                            btn.disabled = false;
-                        }
+            btn.innerText = "Importar";
+            btn.disabled = false;
+        }
 
-                        function openStreamModal(stream = null) {
-                            document.getElementById('streamModal').classList.remove('hidden');
-                            if (stream) {
-                                document.getElementById('streamModalTitle').innerHTML = '<i class="fa-solid fa-pen text-blue-500"></i> Editar Stream';
-                                document.getElementById('editStreamId').value = stream.id;
-                                document.getElementById('editLabel').value = stream.label;
-                                document.getElementById('editUrl').value = stream.url;
-                                document.getElementById('editSeason').value = stream.season;
-                                document.getElementById('editEpisode').value = stream.episode;
-                                document.getElementById('editPriority').value = stream.priority;
-                            } else {
-                                document.getElementById('streamModalTitle').innerHTML = '<i class="fa-solid fa-plus text-blue-500"></i> Nuevo Stream';
-                                document.getElementById('editStreamId').value = "";
-                                document.getElementById('editLabel').value = "";
-                                document.getElementById('editUrl').value = "";
-                                document.getElementById('editSeason').value = "0";
-                                document.getElementById('editEpisode').value = "0";
-                                document.getElementById('editPriority').value = "1";
-                            }
-                        }
-                        function closeStreamModal() { document.getElementById('streamModal').classList.add('hidden'); }
+        function openStreamModal(stream = null) {
+            document.getElementById('streamModal').classList.remove('hidden');
+            if (stream) {
+                document.getElementById('streamModalTitle').innerText = "Editar Stream";
+                document.getElementById('editStreamId').value = stream.id;
+                document.getElementById('editLabel').value = stream.label;
+                document.getElementById('editUrl').value = stream.url;
+                document.getElementById('editSeason').value = stream.season;
+                document.getElementById('editEpisode').value = stream.episode;
+                document.getElementById('editPriority').value = stream.priority;
+            } else {
+                document.getElementById('streamModalTitle').innerText = "Nuevo Stream";
+                document.getElementById('editStreamId').value = "";
+                document.getElementById('editLabel').value = "";
+                document.getElementById('editUrl').value = "";
+                document.getElementById('editSeason').value = "0";
+                document.getElementById('editEpisode').value = "0";
+                document.getElementById('editPriority').value = "1";
+            }
+        }
+        function closeStreamModal() { document.getElementById('streamModal').classList.add('hidden'); }
 
-                        async function saveStream() {
-                            const sid = document.getElementById('editStreamId').value;
-                            const body = {
-                                id: sid || undefined,
-                                titleId: id,
-                                label: document.getElementById('editLabel').value,
-                                url: document.getElementById('editUrl').value,
-                                season: parseInt(document.getElementById('editSeason').value),
-                                episode: parseInt(document.getElementById('editEpisode').value),
-                                priority: parseInt(document.getElementById('editPriority').value),
-                                isEnabled: true
-                            };
+        async function saveStream() {
+            const sid = document.getElementById('editStreamId').value;
+            const body = {
+                id: sid || undefined,
+                titleId: id,
+                label: document.getElementById('editLabel').value,
+                url: document.getElementById('editUrl').value,
+                season: parseInt(document.getElementById('editSeason').value),
+                episode: parseInt(document.getElementById('editEpisode').value),
+                priority: parseInt(document.getElementById('editPriority').value),
+                isEnabled: true
+            };
 
-                            if (!id || id === 'editor') return alert("Guarda el título primero.");
+            if (!id || id === 'editor') return alert("Guarda el título primero.");
 
-                            await fetch('/api/catalog/stream', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                                body: JSON.stringify(body)
-                            });
+            await fetch('/api/catalog/stream', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                body: JSON.stringify(body)
+            });
 
-                            closeStreamModal();
-                            loadData(id);
-                        }
+            closeStreamModal();
+            loadData(id);
+        }
 
-                        async function deleteStream(streamId) {
-                            if (!confirm('¿Eliminar stream?')) return;
-                            await fetch(`/api/catalog/stream/${streamId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${authToken}` } });
-                            location.reload();
-                        }
+        async function deleteStream(streamId) {
+            if (!confirm('¿Eliminar stream?')) return;
+            await fetch(`/api/catalog/stream/${streamId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${authToken}` } });
+            location.reload();
+        }
 
-                        init();
-                    </script>
+        init();
+    </script>
 </body>
 
 </html>
