@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - cxv-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #141414;
+            color: white;
+        }
+
+        .stat-card {
+            background-color: #1a1a1a;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background-color: #252525;
+        }
+
+        .recent-card {
+            position: relative;
+            transition: transform 0.2s;
+        }
+
+        .recent-card:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .nav-link {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            opacity: 1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans pb-20">
+
+    <!-- Navbar -->
+    <div
+        class="fixed top-0 w-full z-50 bg-black/95 px-4 py-3 flex flex-wrap justify-between items-center border-b border-gray-900">
+        <h1 class="text-red-600 text-xl font-bold tracking-tighter uppercase">cxv-app <span
+                class="text-xs text-white bg-red-800 px-2 rounded-full">ADMIN</span></h1>
+
+        <div class="flex gap-4 text-xs md:text-sm order-3 md:order-none w-full md:w-auto mt-2 md:mt-0 justify-center">
+            <a href="/dashboard" class="nav-link active text-white">Dashboard</a>
+            <a href="/catalog" class="nav-link text-white">Catálogo</a>
+            <a href="/scan" class="nav-link text-white">Escanear</a>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4 order-2 md:order-none">
+            <a href="https://cxv-production.up.railway.app" target="_blank"
+                class="bg-white text-black px-2 py-1 md:px-3 rounded text-[10px] md:text-xs font-bold hover:bg-gray-200">
+                <i class="fa-solid fa-puzzle-piece"></i> <span class="hidden sm:inline">Ver App</span>
+            </a>
+            <button onclick="doLogout()" class="text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-24 md:pt-28 px-[4%] max-w-7xl mx-auto">
+
+        <!-- Welcome -->
+        <div class="mb-6 md:mb-10">
+            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Panel de Control</h2>
+            <p class="text-gray-400 text-xs md:text-sm">Bienvenido, <span id="userEmail" class="text-white"></span></p>
+        </div>
+
+        <!-- KPI Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8 md:mb-12">
+            <div class="stat-card p-4 md:p-6 rounded border border-gray-800">
+                <div class="text-gray-400 text-xs md:text-sm mb-1">Películas</div>
+                <div class="text-2xl md:text-3xl font-bold text-red-500" id="statMovies">...</div>
+            </div>
+            <div class="stat-card p-4 md:p-6 rounded border border-gray-800">
+                <div class="text-gray-400 text-xs md:text-sm mb-1">Series</div>
+                <div class="text-2xl md:text-3xl font-bold text-blue-500" id="statSeries">...</div>
+            </div>
+            <div class="stat-card p-4 md:p-6 rounded border border-gray-800">
+                <div class="text-gray-400 text-xs md:text-sm mb-1">Streams Totales</div>
+                <div class="text-2xl md:text-3xl font-bold text-green-500" id="statStreams">...</div>
+            </div>
+            <div class="stat-card p-4 md:p-6 rounded border border-gray-800 flex items-center justify-center cursor-pointer hover:border-red-600"
+                onclick="window.location.href='/scan'">
+                <div class="text-center">
+                    <i class="fa-solid fa-circle-plus text-xl md:text-2xl mb-1 md:mb-2 text-white"></i>
+                    <div class="font-bold text-sm md:text-base">Escanear Nuevo</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recently Added Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-end mb-4">
+                <h3 class="text-xl font-bold">Recientemente Agregados</h3>
+                <a href="/catalog" class="text-xs text-gray-400 hover:text-white">Ver todo ></a>
+            </div>
+
+            <div id="recentGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Injected via JS -->
+                <div class="h-48 bg-[#222] animate-pulse rounded col-span-2"></div>
+                <div class="h-48 bg-[#222] animate-pulse rounded col-span-2"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let authToken = null;
+
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+            authToken = session.access_token;
+            document.getElementById('userEmail').innerText = session.user.email;
+
+            loadStats();
+        }
+
+        async function doLogout() { await supabase.auth.signOut(); window.location.href = '/login'; }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/catalog/stats', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const c = data.data.counts;
+                    document.getElementById('statMovies').innerText = c.movies;
+                    document.getElementById('statSeries').innerText = c.series;
+                    document.getElementById('statStreams').innerText = c.streams;
+
+                    renderRecent(data.data.recent);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderRecent(items) {
+            const grid = document.getElementById('recentGrid');
+            grid.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 text-sm">No hay contenido reciente.</div>';
+                return;
+            }
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'recent-card cursor-pointer';
+                // Simple navigation to editor (future implementation)
+                el.onclick = () => alert(`Editar ${item.name} (Próximamente)`);
+
+                el.innerHTML = `
+                    <div class="relative aspect-[2/3] rounded overflow-hidden mb-2">
+                        <img src="${item.poster_url || 'https://placehold.co/200x300'}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <span class="text-[10px] font-bold uppercase tracking-wider ${item.type === 'movie' ? 'text-red-500' : 'text-blue-400'}">
+                                ${item.type === 'movie' ? 'PELÍCULA' : 'SERIE'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-xs font-bold truncate">${item.name}</div>
+                    <div class="text-[10px] text-gray-500">${new Date(item.created_at).toLocaleDateString()}</div>
+                `;
+                grid.appendChild(el);
+            });
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

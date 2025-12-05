@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor - cxv-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #141414;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans pb-20 p-4 md:p-8 max-w-5xl mx-auto">
+
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 border-b border-gray-800 pb-4 gap-4">
+        <h1 class="text-2xl md:text-3xl font-bold">Editor de Título</h1>
+        <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="save()"
+                class="flex-1 md:flex-none bg-red-600 text-white px-4 md:px-6 py-2 rounded font-bold hover:bg-red-700 text-sm md:text-base">Guardar</button>
+            <a href="/catalog"
+                class="flex-1 md:flex-none bg-gray-700 text-white px-4 md:px-6 py-2 rounded font-bold hover:bg-gray-600 text-center text-sm md:text-base">Cancelar</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <!-- Metadata Form -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Nombre</label>
+                    <input type="text" id="name" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Nombre Original</label>
+                    <input type="text" id="originalName"
+                        class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 md:gap-4">
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Año</label>
+                    <input type="number" id="year"
+                        class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Tipo</label>
+                    <select id="type" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                        <option value="movie">Película</option>
+                        <option value="series">Serie</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-gray-400 text-sm mb-1">Estado</label>
+                    <select id="isEnabled" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white">
+                        <option value="true">Activo</option>
+                        <option value="false">Oculto</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-gray-400 text-sm mb-1">Poster URL</label>
+                <input type="text" id="poster" class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white"
+                    onchange="updatePreview()">
+            </div>
+            <div>
+                <label class="block text-gray-400 text-sm mb-1">Sinopsis</label>
+                <textarea id="overview" rows="5"
+                    class="w-full bg-[#222] border border-gray-700 rounded p-2 text-white"></textarea>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div>
+            <label class="block text-gray-400 text-sm mb-1">Vista Previa</label>
+            <div
+                class="aspect-[2/3] bg-[#222] rounded overflow-hidden border border-gray-700 w-1/2 md:w-full mx-auto md:mx-0">
+                <img id="posterPreview" src="https://placehold.co/400x600" class="w-full h-full object-cover">
+            </div>
+        </div>
+    </div>
+
+    <!-- Streams Section -->
+    <div class="mt-8 md:mt-12">
+        <h2 class="text-xl font-bold mb-4 border-b border-gray-800 pb-2">Streams / Enlaces</h2>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[500px]">
+                <thead>
+                    <tr class="text-gray-400 text-sm border-b border-gray-800">
+                        <th class="py-2">Etiqueta</th>
+                        <th class="py-2">Temp/Ep</th>
+                        <th class="py-2">Prioridad</th>
+                        <th class="py-2 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="streamsTable">
+                    <!-- Injected via JS -->
+                </tbody>
+            </table>
+        </div>
+        <div id="noStreams" class="text-gray-500 text-center py-4 hidden">No hay streams asociados.</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let authToken = null;
+
+        // ID from URL: /editor/:id
+        const paths = window.location.pathname.split('/');
+        const id = paths[paths.length - 1]; // basic parsing
+
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+            authToken = session.access_token;
+
+            if (id && id !== 'editor') {
+                loadData(id);
+            }
+        }
+
+        async function loadData(titleId) {
+            const res = await fetch(`/api/catalog/title/${titleId}`, { headers: { Authorization: `Bearer ${authToken}` } });
+            const { data } = await res.json();
+
+            document.getElementById('name').value = data.name;
+            document.getElementById('originalName').value = data.original_name || '';
+            document.getElementById('year').value = data.year;
+            document.getElementById('type').value = data.type;
+            document.getElementById('isEnabled').value = data.is_enabled;
+            document.getElementById('poster').value = data.poster_url;
+            document.getElementById('overview').value = data.overview || '';
+
+            updatePreview();
+            renderStreams(data.cxv_stream);
+        }
+
+        function updatePreview() {
+            document.getElementById('posterPreview').src = document.getElementById('poster').value || 'https://placehold.co/400x600';
+        }
+
+        function renderStreams(streams) {
+            const tbody = document.getElementById('streamsTable');
+            tbody.innerHTML = '';
+
+            if (!streams || streams.length === 0) {
+                document.getElementById('noStreams').classList.remove('hidden');
+                return;
+            }
+
+            // Sort logic if needed
+            streams.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-800 hover:bg-[#222]';
+                const info = (s.season || s.episode) ? `S${s.season} E${s.episode}` : 'Película';
+                tr.innerHTML = `
+                    <td class="py-3 text-sm font-mono truncate max-w-xs" title="${s.url}">${s.label || 'Stream'}</td>
+                    <td class="py-3 text-sm text-gray-400">${info}</td>
+                    <td class="py-3 text-sm">${s.priority}</td>
+                    <td class="py-3 text-right">
+                        <button onclick="deleteStream('${s.id}')" class="text-red-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function save() {
+            const body = {
+                id: (id && id !== 'editor') ? id : undefined,
+                name: document.getElementById('name').value,
+                originalName: document.getElementById('originalName').value,
+                year: document.getElementById('year').value,
+                type: document.getElementById('type').value,
+                isEnabled: document.getElementById('isEnabled').value === 'true',
+                poster: document.getElementById('poster').value,
+                overview: document.getElementById('overview').value
+            };
+
+            const res = await fetch('/api/catalog/title', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                body: JSON.stringify(body)
+            });
+
+            const result = await res.json();
+            if (result.success) {
+                alert('Guardado correctamente');
+                // Redirect if new creation
+                if (!id || id === 'editor') window.location.href = `/editor/${result.data.id}`;
+            } else {
+                alert('Error: ' + result.error);
+            }
+        }
+
+        async function deleteStream(streamId) {
+            if (!confirm('¿Eliminar stream?')) return;
+            await fetch(`/api/catalog/stream/${streamId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${authToken}` } });
+            location.reload();
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

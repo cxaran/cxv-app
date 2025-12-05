@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicia sesión en cxv-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://assets.nflxext.com/ffe/siteui/vlv3/dace47b4-a5cb-4368-80fe-c26f3e77d540/f5b52435-458f-498f-9d1d-ccd4f1af9913/MX-es-20231023-popsignuptwoweeks-perspective_alpha_website_large.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .netflix-input {
+            background: #333;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 16px 20px;
+            width: 100%;
+        }
+
+        .netflix-input::placeholder {
+            color: #8c8c8c;
+        }
+
+        .netflix-btn {
+            background-color: #e50914;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .netflix-btn:hover {
+            background-color: #c11119;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans">
+
+    <div class="p-6">
+        <h1 class="text-red-600 text-4xl font-bold tracking-tighter uppercase drop-shadow-lg">cxv-app</h1>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-black/80 p-12 rounded md:w-[450px] w-full min-h-[500px] flex flex-col gap-8">
+            <h2 class="text-3xl font-bold text-white mb-2">Inicia sesión</h2>
+
+            <form id="loginForm" class="flex flex-col gap-4">
+                <div>
+                    <input type="email" id="email" class="netflix-input focus:outline-none focus:bg-[#454545]"
+                        placeholder="Email o número de teléfono" required>
+                </div>
+                <div>
+                    <input type="password" id="password" class="netflix-input focus:outline-none focus:bg-[#454545]"
+                        placeholder="Contraseña" required>
+                </div>
+
+                <div id="errorMsg" class="text-[#e87c03] text-sm hidden font-semibold"></div>
+
+                <button type="submit" class="netflix-btn mt-6 text-lg">
+                    Iniciar sesión
+                </button>
+
+                <div class="flex justify-between items-center text-[#b3b3b3] text-sm mt-2">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" class="w-4 h-4 accent-[#737373] bg-[#333] border-none rounded-sm">
+                        Recuérdame
+                    </label>
+                    <a href="#" class="hover:underline">¿Necesitas ayuda?</a>
+                </div>
+            </form>
+
+            <div class="mt-8 text-[#737373]">
+                <p>¿Primera vez en cxv-app? <a href="#" class="text-white hover:underline">Suscríbete ahora.</a></p>
+                <p class="text-xs mt-4">Esta página está protegida por Google reCAPTCHA para comprobar que no eres un
+                    robot.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            errorMsg.classList.add('hidden');
+
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorMsg.innerText = "Credenciales incorrectas. Intenta de nuevo.";
+                errorMsg.classList.remove('hidden');
+            } else {
+                window.location.href = '/dashboard';
+            }
+        });
+
+        async function checkSession() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                window.location.href = '/dashboard';
+            }
+        }
+        checkSession();
+    </script>
+</body>
+
+</html>

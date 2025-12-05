@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - cxv-app</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #141414;
+            color: white;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .movie-card {
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05);
+            z-index: 20;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(to top, #141414 10%, transparent 100%);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans pb-20">
+
+    <!-- Navbar -->
+    <div class="fixed top-0 w-full z-50 bg-gradient-to-b from-black/80 to-transparent px-4 py-3 flex flex-wrap justify-between items-center transition-all bg-black"
+        id="navbar">
+        <h1 class="text-red-600 text-xl md:text-2xl font-bold tracking-tighter uppercase cursor-pointer"
+            onclick="window.location.href='/dashboard'">cxv-app</h1>
+
+        <!-- Mobile Nav Toggle (Hidden specific implementation, simplified with scrollable or just stacking) -->
+        <div class="flex gap-4 text-xs md:text-sm order-3 md:order-none w-full md:w-auto mt-2 md:mt-0 justify-center">
+            <a href="/dashboard" class="text-white opacity-80 hover:opacity-100">Inicio</a>
+            <a href="#" class="text-white font-bold">Catálogo</a>
+            <a href="/scan" class="text-white opacity-80 hover:opacity-100">Escanear</a>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4 order-2 md:order-none">
+            <div
+                class="bg-black/50 border border-white/30 px-2 py-1 rounded flex items-center gap-2 focus-within:border-white">
+                <i class="fa-solid fa-search text-gray-400 text-xs"></i>
+                <input type="text" id="searchInput" placeholder="Buscar..."
+                    class="bg-transparent border-none outline-none text-white text-xs md:text-sm w-24 md:w-48 placeholder-gray-500">
+            </div>
+            <button onclick="logout()" class="text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div id="mainContent">
+        <!-- Hero Section -->
+        <div class="relative h-[60vh] md:h-[80vh] w-full bg-gray-900" id="heroSection">
+            <img id="heroImg" src="" class="w-full h-full object-cover opacity-60">
+            <div class="absolute inset-0 hero-gradient"></div>
+            <div class="absolute bottom-[10%] md:bottom-[20%] left-[4%] max-w-xl pr-4">
+                <span class="text-red-600 font-bold tracking-widest uppercase text-xs sm:text-sm mb-2 block"
+                    id="heroType">DESTACADO</span>
+                <h1 class="text-3xl sm:text-5xl md:text-7xl font-bold mb-2 md:mb-4 leading-none" id="heroTitle">
+                    Cargando...</h1>
+                <p class="text-gray-300 text-xs sm:text-sm md:text-lg mb-4 md:mb-6 line-clamp-3 md:line-clamp-4"
+                    id="heroOverview">...</p>
+                <div class="flex gap-2 md:gap-4">
+                    <button
+                        class="bg-white text-black px-4 md:px-8 py-1.5 md:py-2 rounded font-bold hover:bg-gray-200 transition text-xs md:text-base"
+                        onclick="editHero()">
+                        <i class="fa-solid fa-pen mr-1 md:mr-2"></i> Editar
+                    </button>
+                    <button
+                        class="bg-gray-500/50 text-white px-4 md:px-8 py-1.5 md:py-2 rounded font-bold hover:bg-gray-500/70 transition text-xs md:text-base"
+                        onclick="deleteHero()">
+                        <i class="fa-solid fa-trash mr-1 md:mr-2"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rows -->
+        <div class="pl-[4%] mt-[-100px] relative z-10 space-y-12 pb-10">
+
+            <!-- Recents -->
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group">
+                    Recientemente Agregados <span
+                        class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver todo
+                        ></span>
+                </h3>
+                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="recentRow"></div>
+            </div>
+
+            <!-- Movies -->
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group"
+                    onclick="showGrid('movie')">
+                    Películas <span class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver
+                        todo ></span>
+                </h3>
+                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="moviesRow"></div>
+            </div>
+
+            <!-- Series -->
+            <div>
+                <h3 class="text-xl font-bold mb-4 text-gray-200 hover:text-white cursor-pointer group"
+                    onclick="showGrid('series')">
+                    Series <span class="text-xs text-blue-400 opacity-0 group-hover:opacity-100 transition ml-2">Ver
+                        todo ></span>
+                </h3>
+                <div class="flex gap-2 overflow-x-auto hide-scrollbar pb-8" id="seriesRow"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search/Grid View (Hidden by default) -->
+    <div id="gridView" class="hidden pt-24 px-[4%] min-h-screen">
+        <h2 class="text-2xl font-bold mb-6" id="gridTitle">Resultados</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4" id="gridContainer"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let authToken = null;
+        let heroItem = null;
+
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+            authToken = session.access_token;
+
+            loadLanding();
+        }
+
+        async function loadLanding() {
+            const res = await fetch('/api/catalog/landing', { headers: { Authorization: `Bearer ${authToken}` } });
+            const { data } = await res.json();
+
+            if (data.hero) setupHero(data.hero);
+            renderRow('recentRow', data.recent);
+            renderRow('moviesRow', data.movies);
+            renderRow('seriesRow', data.series);
+        }
+
+        function setupHero(item) {
+            heroItem = item;
+            document.getElementById('heroImg').src = item.poster_url || 'https://placehold.co/1920x1080/1a1a1a/FFF';
+            document.getElementById('heroTitle').innerText = item.name;
+            document.getElementById('heroOverview').innerText = item.overview || "Sin descripción disponible.";
+            document.getElementById('heroType').innerText = item.type === 'movie' ? 'PELÍCULA' : 'SERIE';
+        }
+
+        function renderRow(containerId, items) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'flex-none w-[160px] md:w-[200px] movie-card cursor-pointer rounded-md overflow-hidden bg-[#222]';
+                card.onclick = () => window.location.href = `/editor/${item.id}`;
+                card.innerHTML = `
+                    <div class="aspect-[2/3] relative">
+                        <img src="${item.poster_url}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition flex flex-col justify-end p-2">
+                             <h4 class="font-bold text-xs text-white mb-1">${item.name}</h4>
+                             <span class="text-[10px] text-gray-300">${item.year || ''}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Search & Grid Logic
+        const searchInput = document.getElementById('searchInput');
+        let searchTimeout;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const val = e.target.value;
+            if (val.length > 2) {
+                searchTimeout = setTimeout(() => doSearch(val), 500);
+            } else if (val.length === 0) {
+                showMain();
+            }
+        });
+
+        async function doSearch(q) {
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('gridView').classList.remove('hidden');
+            document.getElementById('gridTitle').innerText = `Resultados para "${q}"`;
+
+            const res = await fetch(`/api/catalog/search?q=${q}`, { headers: { Authorization: `Bearer ${authToken}` } });
+            const { data } = await res.json();
+            renderGrid(data.data);
+        }
+
+        function showGrid(type) {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('gridView').classList.remove('hidden');
+            document.getElementById('gridTitle').innerText = type === 'movie' ? "Todas las Películas" : "Todas las Series";
+
+            // Fetch all (paginated in real app, simplified here)
+            fetch(`/api/catalog/search?type=${type}&limit=100`, { headers: { Authorization: `Bearer ${authToken}` } })
+                .then(r => r.json())
+                .then(d => renderGrid(d.data.data));
+        }
+
+        function showMain() {
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('gridView').classList.add('hidden');
+        }
+
+        function renderGrid(items) {
+            const container = document.getElementById('gridContainer');
+            container.innerHTML = '';
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'aspect-[2/3] bg-[#222] rounded overflow-hidden cursor-pointer relative group';
+                card.onclick = () => window.location.href = `/editor/${item.id}`;
+                card.innerHTML = `
+                    <img src="${item.poster_url}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition p-4 flex flex-col justify-center items-center text-center">
+                        <h4 class="font-bold text-white mb-2">${item.name}</h4>
+                        <button class="bg-red-600 text-white text-xs px-3 py-1 rounded">Editar</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function editHero() {
+            if (heroItem) window.location.href = `/editor/${heroItem.id}`;
+        }
+
+        async function deleteHero() {
+            if (!heroItem) return;
+            if (!confirm(`¿Eliminar ${heroItem.name}?`)) return;
+            await fetch(`/api/catalog/title/${heroItem.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${authToken}` } });
+            location.reload();
+        }
+
+        async function logout() { await supabase.auth.signOut(); window.location.href = '/login'; }
+
+        init();
+    </script>
+</body>
+
+</html>

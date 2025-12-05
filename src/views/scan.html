@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cxv-app Dashboard WZ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background-color: #141414;
+            color: white;
+        }
+
+        .netflix-header {
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
+            padding: 20px 4%;
+        }
+
+        .netflix-btn {
+            background-color: #e50914;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .netflix-btn:hover {
+            background-color: #c11119;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #333;
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background-color: #e50914;
+            transform: scale(1.2);
+        }
+
+        .netflix-input {
+            background-color: #333;
+            border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            border-radius: 2px;
+            width: 100%;
+        }
+
+        /* Step Transitions */
+        .wizard-step {
+            display: none;
+        }
+
+        .wizard-step.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .netflix-card {
+            background-color: #181818;
+            border-radius: 4px;
+            transition: transform 0.2s, background-color 0.2s;
+            position: relative;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans">
+
+    <!-- Navbar -->
+    <div class="netflix-header fixed top-0 w-full z-50 flex justify-between items-center">
+        <div class="flex items-center gap-8">
+            <h1 class="text-red-600 text-2xl font-bold tracking-tighter uppercase cursor-pointer">cxv-app</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="https://cxv-production.up.railway.app" target="_blank"
+                class="bg-white text-black px-4 py-1.5 rounded text-sm font-bold hover:bg-gray-200 transition flex items-center gap-2">
+                <i class="fa-solid fa-puzzle-piece"></i> Agregar Addon
+            </a>
+            <div class="flex items-center gap-2 cursor-pointer group relative">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png"
+                    class="w-8 h-8 rounded">
+                <i class="fa-solid fa-caret-down text-white text-xs transition group-hover:rotate-180"></i>
+                <div
+                    class="absolute top-8 right-0 bg-black/90 border border-gray-800 p-2 rounded w-32 hidden group-hover:block pt-4">
+                    <span id="userEmail" class="block text-xs text-gray-400 mb-2 truncate px-2"></span>
+                    <hr class="border-gray-700 mb-2">
+                    <button onclick="doLogout()" class="text-sm text-white hover:underline px-2 w-full text-left">Cerrar
+                        sesión</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-24 px-[4%] pb-10 max-w-7xl mx-auto">
+
+        <!-- Wizard Steps Indicator -->
+        <div class="step-indicator">
+            <div id="dot1" class="step-dot active" title="Paso 1: Escanear"></div>
+            <div id="dot2" class="step-dot" title="Paso 2: Validar Metadatos"></div>
+            <div id="dot3" class="step-dot" title="Paso 3: Selección Final"></div>
+        </div>
+
+        <!-- STEP 1: SCAN -->
+        <div id="step1" class="wizard-step active">
+            <h2 class="text-2xl font-bold text-center mb-6">Paso 1: Escanear Mega Folder</h2>
+            <div class="bg-[#141414] p-8 rounded border border-[#333] max-w-3xl mx-auto">
+                <form id="scanForm" class="flex flex-col gap-6">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">URL de Mega</label>
+                        <input type="text" id="megaUrl" class="netflix-input" placeholder="https://mega.nz/folder/..."
+                            required>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">Tipo de Contenido</label>
+                            <select id="mediaType" class="netflix-input">
+                                <option value="series" selected>📺 Serie</option>
+                                <option value="movie">🎬 Película</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-2">IMDb ID (Opcional - Recomendado)</label>
+                            <input type="text" id="imdbId" class="netflix-input" placeholder="tt1234567">
+                        </div>
+                    </div>
+
+                    <div class="bg-[#1a1a1a] p-4 rounded border border-[#333]">
+                        <div class="text-xs font-bold text-gray-500 mb-2 uppercase">Ayuda a la IA (Opcional)</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <input type="text" id="qTitle" class="netflix-input text-sm" placeholder="Título">
+                            <input type="number" id="qYear" class="netflix-input text-sm" placeholder="Año">
+                            <input type="text" id="qGenre" class="netflix-input text-sm" placeholder="Género">
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <button type="submit" class="netflix-btn px-8 py-3 text-lg">
+                            Siguiente <i class="fa-solid fa-chevron-right ml-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loader -->
+        <div id="loader" class="hidden text-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600 mx-auto"></div>
+            <p class="mt-6 text-xl text-[#e5e5e5] animate-pulse">Analizando archivos y metadatos...</p>
+        </div>
+
+        <!-- STEP 2: METADATA REVIEW -->
+        <div id="step2" class="wizard-step">
+            <h2 class="text-2xl font-bold text-center mb-6">Paso 2: Validar Metadatos</h2>
+            <div class="max-w-4xl mx-auto bg-[#141414] border border-[#333] p-6 rounded" id="metaReviewContainer">
+                <!-- Dynamic Content built by JS -->
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <img id="reviewPoster" src="" class="w-32 md:w-48 rounded shadow-lg">
+                    <div class="flex-1">
+                        <h3 id="reviewTitle" class="text-3xl font-bold text-white mb-2"></h3>
+                        <div class="flex gap-4 text-sm text-gray-400 mb-4">
+                            <span id="reviewYear"></span>
+                            <span id="reviewImdb"
+                                class="bg-yellow-600 text-black px-1 rounded font-bold text-xs flex items-center">IMDb</span>
+                        </div>
+
+                        <div class="my-4 p-4 bg-red-900/20 border border-red-900 rounded text-sm text-gray-300">
+                            <strong>¿Es correcto?</strong>
+                            <p>Si la IA detectó la serie o película equivocada, usa el botón de abajo para buscar la
+                                correcta manualmente.</p>
+                        </div>
+
+                        <div class="flex gap-4 mt-6">
+                            <button onclick="openSearchModal()"
+                                class="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded">
+                                <i class="fa-solid fa-pen-to-square"></i> Corregir / Buscar
+                            </button>
+                            <button onclick="goToStep3()" class="netflix-btn px-6 py-2">
+                                Confirmar y Continuar <i class="fa-solid fa-check ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: SELECTION & SAVE -->
+        <div id="step3" class="wizard-step">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Paso 3: Selección Final</h2>
+                <button onclick="saveToSupabase()" id="btnSave" class="netflix-btn px-6 py-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Guardar Seleccionados
+                </button>
+            </div>
+
+            <p class="text-gray-400 mb-4">Desmarca los archivos que no quieras agregar.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="resultsGrid">
+                <!-- Cards inject here -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4">
+        <div class="bg-[#181818] p-6 rounded max-w-2xl w-full border border-[#333]">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Buscar en OMDb</h3>
+                <button onclick="closeSearchModal()" class="text-gray-400 hover:text-white"><i
+                        class="fa-solid fa-times text-xl"></i></button>
+            </div>
+
+            <div class="flex gap-2 mb-4">
+                <input type="text" id="modalSearchQuery" class="netflix-input"
+                    placeholder="Nombre de la serie/película...">
+                <button onclick="performSearch()" class="bg-white text-black font-bold px-4 rounded">Buscar</button>
+            </div>
+
+            <div id="modalResults" class="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto">
+                <!-- Search results -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = '{{SUPABASE_URL}}';
+        const SUPABASE_KEY = '{{SUPABASE_KEY}}';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // State
+        let authToken = null;
+        let globalScanData = []; // Full raw data from backend
+        let currentMetadata = {}; // The shared metadata (Title, Poster, Year, ID)
+
+        // --- Auth ---
+        async function initAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = '/login'; return; }
+            authToken = session.access_token;
+            document.getElementById('userEmail').innerText = session.user.email;
+        }
+        initAuth();
+        async function doLogout() { await supabase.auth.signOut(); window.location.href = '/login'; }
+
+        // --- Wizard Navigation ---
+        function setStep(step) {
+            document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
+            document.getElementById(`step${step}`).classList.add('active');
+
+            document.querySelectorAll('.step-dot').forEach(el => el.classList.remove('active'));
+            document.getElementById(`dot${step}`).classList.add('active');
+        }
+
+        // --- Step 1: Scan ---
+        document.getElementById('scanForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payload = {
+                megaUrl: document.getElementById('megaUrl').value,
+                mediaType: document.getElementById('mediaType').value,
+                hints: {
+                    imdbId: document.getElementById('imdbId').value,
+                    title: document.getElementById('qTitle').value,
+                    year: document.getElementById('qYear').value,
+                    genre: document.getElementById('qGenre').value
+                }
+            };
+
+            // UI
+            document.getElementById('step1').classList.add('hidden'); // Hide form
+            document.getElementById('loader').classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.status === 401) { window.location.href = '/login'; return; }
+                const data = await res.json();
+
+                if (!data.success) throw new Error(data.error);
+
+                // Initialize State
+                globalScanData = data.data;
+                if (globalScanData.length > 0) {
+                    // Assume homogeneity for Step 2 Review (Take first item as representative)
+                    // If mixed content (rare for Mega folder), user validates per-file later, but Step 2 is global context.
+                    currentMetadata = {
+                        title: globalScanData[0].title,
+                        year: globalScanData[0].year,
+                        poster: globalScanData[0].poster,
+                        imdbId: globalScanData[0].imdbId
+                    };
+
+                    updateReviewUI();
+                    document.getElementById('loader').classList.add('hidden');
+                    setStep(2);
+                } else {
+                    throw new Error("No se encontraron archivos.");
+                }
+
+            } catch (err) {
+                alert("Error: " + err.message);
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('step1').classList.remove('hidden');
+            }
+        });
+
+        // --- Step 2: Validation ---
+        function updateReviewUI() {
+            document.getElementById('reviewTitle').innerText = currentMetadata.title;
+            document.getElementById('reviewYear').innerText = currentMetadata.year || 'N/A';
+            document.getElementById('reviewPoster').src = currentMetadata.poster || 'https://placehold.co/200x300?text=No+Poster';
+        }
+
+        function openSearchModal() {
+            document.getElementById('searchModal').classList.remove('hidden');
+            document.getElementById('modalSearchQuery').value = currentMetadata.title; // Pre-fill
+            performSearch(); // Auto search
+        }
+        function closeSearchModal() { document.getElementById('searchModal').classList.add('hidden'); }
+
+        async function performSearch() {
+            const query = document.getElementById('modalSearchQuery').value;
+            const type = document.getElementById('mediaType').value;
+            const resContainer = document.getElementById('modalResults');
+            resContainer.innerHTML = '<div class="text-center p-4">Buscando...</div>';
+
+            try {
+                const res = await fetch('/api/search-metadata', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({ query, type })
+                });
+                const data = await res.json();
+
+                resContainer.innerHTML = '';
+                if (data.data && data.data.length > 0) {
+                    data.data.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = "flex items-center gap-4 p-2 bg-[#222] hover:bg-[#333] cursor-pointer rounded border border-transparent hover:border-gray-600";
+                        row.innerHTML = `
+                            <img src="${item.poster || ''}" class="w-10 h-14 object-cover">
+                            <div>
+                                <div class="font-bold text-sm">${item.title}</div>
+                                <div class="text-xs text-gray-400">${item.year} - ${item.imdbId}</div>
+                            </div>
+                        `;
+                        row.onclick = () => selectManualMetadata(item);
+                        resContainer.appendChild(row);
+                    });
+                } else {
+                    resContainer.innerHTML = '<div class="text-center p-4 text-gray-400">Sin resultados</div>';
+                }
+            } catch (e) {
+                resContainer.innerText = "Error Buscando";
+            }
+        }
+
+        function selectManualMetadata(item) {
+            currentMetadata = item;
+            updateReviewUI();
+            closeSearchModal();
+            // Apply this new metadata to ALL items in globalScanData
+            globalScanData = globalScanData.map(f => ({
+                ...f,
+                title: item.title,
+                year: item.year,
+                poster: item.poster,
+                imdbId: item.imdbId,
+                verified: true
+            }));
+            Swal.fire({
+                icon: 'success',
+                title: 'Actualizado',
+                text: 'Se aplicaron los nuevos metadatos a todos los archivos.',
+                timer: 1500,
+                showConfirmButton: false,
+                background: '#141414', color: '#fff'
+            });
+        }
+
+        function goToStep3() {
+            setStep(3);
+            renderFinalGrid();
+        }
+
+        // --- Step 3: Selection ---
+        function renderFinalGrid() {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+
+            globalScanData.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "netflix-card p-4 flex gap-4 items-start border border-transparent";
+                // Checkbox behavior handled by onclick
+                div.onclick = (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        const chk = document.getElementById(`chk-${idx}`);
+                        chk.checked = !chk.checked;
+                    }
+                    div.classList.toggle('border-red-600');
+                };
+
+                let episodeLabel = (item.season || item.episode) ? `S${item.season}:E${item.episode}` : "MOVIE";
+
+                div.innerHTML = `
+                    <div class="flex flex-col items-center gap-2">
+                        <input type="checkbox" id="chk-${idx}" class="accent-red-600 w-5 h-5" checked>
+                        <img src="${item.poster}" class="w-16 rounded">
+                    </div>
+                    <div class="flex-1 min-w-0 overflow-hidden">
+                        <div class="font-bold text-sm truncate text-white" title="${item.title}">${item.title}</div>
+                        <div class="text-xs text-gray-400 mb-1">${episodeLabel}</div>
+                        <div class="text-[10px] text-gray-500 truncate" title="${item.original_filename}">${item.original_filename}</div>
+                        <div class="text-[10px] bg-red-900/50 text-red-200 inline-block px-1 rounded mt-1">${(item.size / (1024 * 1024)).toFixed(0)} MB</div>
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        }
+
+        async function saveToSupabase() {
+            // Filter only checked
+            const toSave = globalScanData.filter((_, idx) => document.getElementById(`chk-${idx}`).checked);
+
+            if (toSave.length === 0) return alert("Selecciona al menos un archivo.");
+
+            const btn = document.getElementById('btnSave');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/save-db', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
+                    body: JSON.stringify({ items: toSave })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success', title: '¡Guardado!',
+                        html: `Agregados: ${data.report.success}<br>Errores: ${data.report.errors}`,
+                        background: '#141414', color: '#fff'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.error);
+                }
+
+            } catch (e) {
+                alert(e.message);
+            } finally {
+                btn.innerHTML = 'Guardar Seleccionados';
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>
