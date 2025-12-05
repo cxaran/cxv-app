@@ -186,7 +186,7 @@ async function importMegaToTitle(req, res) {
         const streamModel = new Stream(client);
 
         // 1. Fetch files from Mega
-        const files = await megaService.fetchFiles(url);
+        const files = await megaService.crawlMega(url);
         if (!files || files.length === 0) throw new Error("No se encontraron archivos en el enlace.");
 
         // 2. Process and Insert
@@ -194,7 +194,7 @@ async function importMegaToTitle(req, res) {
         for (const file of files) {
             // Simple Parsing Logic for S/E
             // Regex for S01E01, 1x01, etc.
-            const name = file.name;
+            const name = file.fileName;
             let season = 0;
             let episode = 0;
 
@@ -216,8 +216,8 @@ async function importMegaToTitle(req, res) {
 
             const streamData = {
                 titleId: id,
-                url: file.url,
-                label: file.name, // Use filename as fallback label
+                url: file.megaUrl,
+                label: file.fileName, // Use filename as fallback label
                 season: season,
                 episode: episode,
                 priority: 1,
