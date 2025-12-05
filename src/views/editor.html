@@ -308,10 +308,13 @@
                             <td class="p-3 w-20 text-center font-bold text-xl text-gray-500">${s.episode}</td>
                             <td class="p-3 truncate max-w-[200px]" title="${s.url}">
                                 <div class="font-bold text-white mb-1">${s.label}</div>
+                                ${(s.season && s.episode) ? `<div class="text-xs text-yellow-500 font-mono font-bold mb-1">[S${s.season}E${s.episode}]</div>` : ''}
                                 <div class="text-[10px] text-blue-400 cursor-pointer hover:underline font-mono truncate" onclick="window.open('${s.url}', '_blank')">${s.url}</div>
                             </td>
-                            <td class="p-3 text-right gap-2">
-                                <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-2 transition"><i class="fa-solid fa-pen"></i></button>
+                            <td class="p-3 text-right whitespace-nowrap">
+                                <button onclick="playStream('${s.id}')" class="bg-green-900/40 hover:bg-green-600 text-green-400 hover:text-white p-2 rounded mr-1 transition" title="Reproducir"><i class="fa-solid fa-play"></i></button>
+                                <button onclick="playExternal('${s.id}')" class="bg-orange-900/40 hover:bg-orange-600 text-orange-400 hover:text-white p-2 rounded mr-1 transition" title="Abrir Externo (VLC)"><i class="fa-solid fa-up-right-from-square"></i></button>
+                                <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-1 transition"><i class="fa-solid fa-pen"></i></button>
                                 <button onclick="deleteStream('${s.id}')" class="bg-red-900/50 hover:bg-red-600 text-white p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
                             </td>
                          `;
@@ -335,10 +338,15 @@
                     const tr = document.createElement('tr');
                     tr.className = 'border-b border-gray-800 hover:bg-[#222] transition';
                     tr.innerHTML = `
-                        <td class="py-3 text-sm font-bold">${s.label}</td>
+                        <td class="py-3 text-sm font-bold">
+                            ${s.label}
+                            ${(s.season && s.episode) ? `<div class="text-xs text-yellow-500 font-mono font-bold mt-1">[S${s.season}E${s.episode}]</div>` : ''}
+                        </td>
                         <td class="py-3 text-sm font-mono truncate max-w-xs text-blue-400 cursor-pointer hover:underline" onclick="window.open('${s.url}', '_blank')">${s.url}</td>
-                        <td class="py-3 text-right">
-                             <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-2 transition"><i class="fa-solid fa-pen"></i></button>
+                        <td class="py-3 text-right whitespace-nowrap">
+                             <button onclick="playStream('${s.id}')" class="bg-green-900/40 hover:bg-green-600 text-green-400 hover:text-white p-2 rounded mr-1 transition" title="Reproducir"><i class="fa-solid fa-play"></i></button>
+                             <button onclick="playExternal('${s.id}')" class="bg-orange-900/40 hover:bg-orange-600 text-orange-400 hover:text-white p-2 rounded mr-1 transition" title="Abrir Externo (VLC)"><i class="fa-solid fa-up-right-from-square"></i></button>
+                             <button onclick='openStreamModal(${JSON.stringify(s).replace(/'/g, "&apos;")})' class="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded mr-1 transition"><i class="fa-solid fa-pen"></i></button>
                              <button onclick="deleteStream('${s.id}')" class="bg-red-900/50 hover:bg-red-600 text-white p-2 rounded transition"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     `;
@@ -347,6 +355,16 @@
                 table.append(tbody);
                 container.appendChild(table);
             }
+        }
+
+        function playStream(streamId) {
+            window.open(`/api/catalog/stream/${streamId}/play?token=${authToken}`, '_blank');
+        }
+
+        function playExternal(streamId) {
+            // VLC Protocol or generic intent
+            const streamUrl = `${window.location.origin}/api/catalog/stream/${streamId}/play?token=${authToken}`;
+            window.open(`vlc://${streamUrl}`, '_self');
         }
 
         async function save() {
