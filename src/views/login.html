@@ -10,7 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://assets.nflxext.com/ffe/siteui/vlv3/dace47b4-a5cb-4368-80fe-c26f3e77d540/f5b52435-458f-498f-9d1d-ccd4f1af9913/MX-es-20231023-popsignuptwoweeks-perspective_alpha_website_large.jpg');
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1600&q=80');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -68,6 +68,8 @@
                 </div>
 
                 <div id="errorMsg" class="text-[#e87c03] text-sm hidden font-semibold"></div>
+                <pre id="responseBox"
+                    class="hidden bg-[#111] text-[#e5e5e5] text-xs p-3 rounded border border-[#333] whitespace-pre-wrap break-words"></pre>
 
                 <button type="submit" class="netflix-btn mt-6 text-lg">
                     Iniciar sesión
@@ -94,30 +96,96 @@
         const SUPABASE_URL = '{{SUPABASE_URL}}';
         const SUPABASE_KEY = '{{SUPABASE_KEY}}';
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Rename to avoid clashing with the global "supabase" exposed by the CDN script
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const errorMsg = document.getElementById('errorMsg');
+        const responseBox = document.getElementById('responseBox');
+
+        const showResponse = (title, payload) => {
+            if (!responseBox) return;
+            responseBox.textContent = `${title}\n${JSON.stringify(payload, null, 2)}`;
+            responseBox.classList.remove('hidden');
+        };
+
+        console.info('[login] initializing Supabase client', {
+            urlPresent: Boolean(SUPABASE_URL),
+            keyPresent: Boolean(SUPABASE_KEY)
+        });
+        if (!SUPABASE_URL || !SUPABASE_KEY) {
+            console.warn('[login] missing Supabase environment variables; authentication will fail', {
+                urlPresent: Boolean(SUPABASE_URL),
+                keyPresent: Boolean(SUPABASE_KEY)
+            });
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const errorMsg = document.getElementById('errorMsg');
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
 
+            console.info('[login] submit attempt', { email });
             errorMsg.classList.add('hidden');
+            responseBox.classList.add('hidden');
 
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-            if (error) {
-                errorMsg.innerText = "Credenciales incorrectas. Intenta de nuevo.";
-                errorMsg.classList.remove('hidden');
-            } else {
+                if (error) {
+                    console.error('[login] signInWithPassword error', {
+                        email,
+                        code: error.code,
+                        message: error.message,
+                        status: error.status
+                    });
+                    errorMsg.innerText = "Credenciales incorrectas. Intenta de nuevo.";
+                    errorMsg.classList.remove('hidden');
+                    showResponse('Respuesta de login (error)', {
+                        email,
+                        code: error.code,
+                        message: error.message,
+                        status: error.status
+                    });
+                    return;
+                }
+
+                showResponse('Respuesta de login (exito)', {
+                    email,
+                    userId: data?.user?.id || null,
+                    hasSession: Boolean(data?.session)
+                });
+                console.info('[login] sign-in success, redirecting', { email, hasSession: Boolean(data?.session) });
                 window.location.href = '/dashboard';
+            } catch (err) {
+                console.error('[login] unexpected exception during sign-in', err);
+                errorMsg.innerText = "Hubo un error al iniciar sesion. Intenta de nuevo.";
+                errorMsg.classList.remove('hidden');
+                showResponse('Respuesta de login (excepcion inesperada)', {
+                    email,
+                    message: err?.message || 'Unknown error'
+                });
             }
         });
 
         async function checkSession() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                window.location.href = '/dashboard';
+            console.info('[login] checking existing session');
+            try {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                if (error) {
+                    console.error('[login] session lookup error', { code: error.code, message: error.message });
+                    return;
+                }
+                if (session) {
+                    console.info('[login] session found, redirecting to dashboard');
+                    window.location.href = '/dashboard';
+                } else {
+                    console.info('[login] no active session detected');
+                }
+            } catch (err) {
+                console.error('[login] unexpected exception while checking session', err);
             }
         }
         checkSession();

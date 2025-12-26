@@ -11,7 +11,6 @@ router.post('/search-metadata', authenticate, scanController.searchMetadata);
 router.post('/save-db', authenticate, storageController.saveDb);
 
 // Catalog Routes
-// Catalog Routes
 router.get('/catalog/stats', authenticate, catalogController.getStats);
 router.get('/catalog/landing', authenticate, catalogController.getCatalogData);
 router.get('/catalog/search', authenticate, catalogController.searchTitles);
