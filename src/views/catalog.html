@@ -189,7 +189,7 @@
     <script>
         const SUPABASE_URL = '{{SUPABASE_URL}}';
         const SUPABASE_KEY = '{{SUPABASE_KEY}}';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let authToken = null;
         let heroItem = null;
 
@@ -269,21 +269,82 @@
         }
 
         async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { window.location.href = '/login'; return; }
-            authToken = session.access_token;
-            loadLanding();
+            try {
+                // Debug UI
+                const h = document.getElementById('heroTitle');
+                if (h) h.innerText = 'Cargando... (Autenticando)';
+
+                const { data, error } = await supabaseClient.auth.getSession();
+                if (error) throw error;
+
+                const session = data?.session;
+                if (!session) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                authToken = session.access_token;
+                loadLanding();
+            } catch (err) {
+                console.error("[catalog] init error", err);
+                const h = document.getElementById('heroTitle');
+                if (h) h.innerText = 'Error de Sesión';
+                const p = document.getElementById('heroOverview');
+                if (p) p.innerText = err.message || "No se pudo verificar la sesión.";
+            }
         }
 
         async function loadLanding() {
             try {
-                const res = await fetch('/api/catalog/landing', { headers: { Authorization: `Bearer ${authToken}` } });
-                const { data } = await res.json();
-                if (data.hero) renderHero(data.hero);
+                document.getElementById('heroTitle').innerText = 'Cargando... (1. Fetching)';
+
+                // Add timeout to prevent hanging
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+                const res = await fetch('/api/catalog/landing', {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                document.getElementById('heroTitle').innerText = 'Cargando... (2. Parsing)';
+                const payload = await res.json();
+
+                if (!res.ok || !payload?.success) {
+                    const msg = payload?.error || `Error HTTP ${res.status}`;
+                    throw new Error(msg);
+                }
+
+                const data = payload.data;
+                if (!data) throw new Error('Respuesta de catalogo vacia');
+
+                const hasData = Boolean(
+                    (data.hero) ||
+                    (data.recent && data.recent.length) ||
+                    (data.movies && data.movies.length) ||
+                    (data.series && data.series.length)
+                );
+
+                if (!hasData) {
+                    throw new Error('Catalogo vacio o sin permisos para leerlo');
+                }
+
+                const heroCandidate = data.hero
+                    || (data.recent && data.recent[0])
+                    || (data.movies && data.movies[0])
+                    || (data.series && data.series[0])
+                    || null;
+
+                if (heroCandidate) renderHero(heroCandidate);
                 renderRow('recentRow', data.recent);
                 renderRow('moviesRow', data.movies);
                 renderRow('seriesRow', data.series);
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('[catalog] no se pudo cargar el catalogo', e);
+                document.getElementById('heroTitle').innerText = 'No se pudo cargar el catalogo';
+                document.getElementById('heroOverview').innerText = e?.message || 'Intenta recargar o iniciar sesion de nuevo.';
+            }
         }
 
         function renderHero(item) {
@@ -318,22 +379,37 @@
             else if (val.length === 0) showMain();
         });
 
+
         async function doSearch(q) {
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('gridView').classList.remove('hidden');
             document.getElementById('gridTitle').innerText = `Resultados para "${q}"`;
-            const res = await fetch(`/api/catalog/search?q=${q}`, { headers: { Authorization: `Bearer ${authToken}` } });
-            const { data } = await res.json();
-            renderGrid(data.data);
+            try {
+                const res = await fetch(`/api/catalog/search?q=${encodeURIComponent(q)}`, { headers: { Authorization: `Bearer ${authToken}` } });
+                const payload = await res.json();
+                if (!res.ok || !payload?.success) throw new Error(payload?.error || `Error HTTP ${res.status}`);
+                renderGrid(payload.data?.data || []);
+            } catch (err) {
+                console.error('[catalog] busqueda fallida', err);
+                document.getElementById('gridContainer').innerHTML = `<div class="col-span-full text-gray-400 text-sm">No se pudo buscar: ${err.message}</div>`;
+            }
         }
 
-        function showGrid(type) {
+
+        async function showGrid(type) {
             document.getElementById('searchInput').value = '';
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('gridView').classList.remove('hidden');
-            document.getElementById('gridTitle').innerText = type === 'movie' ? "Películas" : "Series";
-            fetch(`/api/catalog/search?type=${type}&limit=100`, { headers: { Authorization: `Bearer ${authToken}` } })
-                .then(r => r.json()).then(d => renderGrid(d.data.data));
+            document.getElementById('gridTitle').innerText = type === 'movie' ? "Peliculas" : "Series";
+            try {
+                const res = await fetch(`/api/catalog/search?type=${type}&limit=100`, { headers: { Authorization: `Bearer ${authToken}` } });
+                const payload = await res.json();
+                if (!res.ok || !payload?.success) throw new Error(payload?.error || `Error HTTP ${res.status}`);
+                renderGrid(payload.data?.data || []);
+            } catch (err) {
+                console.error('[catalog] grid load error', err);
+                document.getElementById('gridContainer').innerHTML = `<div class="col-span-full text-gray-400 text-sm">No se pudo cargar: ${err.message}</div>`;
+            }
         }
 
         function showMain() {
@@ -403,7 +479,7 @@
             location.reload();
         }
 
-        async function logout() { await supabase.auth.signOut(); window.location.href = '/login'; }
+        async function logout() { await supabaseClient.auth.signOut(); window.location.href = '/login'; }
 
         init();
     </script>

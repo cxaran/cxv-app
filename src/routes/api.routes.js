@@ -12,7 +12,7 @@ router.post('/save-db', authenticate, storageController.saveDb);
 
 // Catalog Routes
 router.get('/catalog/stats', authenticate, catalogController.getStats);
-router.get('/catalog/landing', authenticate, catalogController.getCatalogData);
+router.get('/catalog/landing', catalogController.getCatalogData);
 router.get('/catalog/search', authenticate, catalogController.searchTitles);
 router.get('/catalog/title/:id', authenticate, catalogController.getTitle);
 router.post('/catalog/title', authenticate, catalogController.saveTitle);
@@ -23,5 +23,9 @@ router.post('/catalog/import-imdb', authenticate, catalogController.importFromIm
 router.post('/catalog/stream', authenticate, catalogController.saveStream);
 router.delete('/catalog/stream/:id', authenticate, catalogController.deleteStream);
 router.get('/catalog/stream/:id/play', authenticate, catalogController.streamContent);
+
+// Debug helpers
+router.get('/catalog/debug/titles', authenticate, catalogController.debugTitles);
+router.get('/catalog/debug/streams', authenticate, catalogController.debugStreams);
 
 module.exports = router;

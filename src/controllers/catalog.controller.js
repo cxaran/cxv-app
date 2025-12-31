@@ -36,7 +36,8 @@ async function getStats(req, res) {
 
 async function getCatalogData(req, res) {
     try {
-        const client = getClient(req);
+        // Use anon client for catalog data to ensure public RLS policies apply (resolves "catalog not loading" if auth RLS is missing)
+        const client = createClient(env.SUPABASE_URL, env.SUPABASE_KEY);
         const titleModel = new Title(client);
 
         const [random, recent, movies, series] = await Promise.all([
@@ -46,10 +47,24 @@ async function getCatalogData(req, res) {
             titleModel.findAll({ type: 'series', limit: 10 })
         ]);
 
+        const hero = random[0] || null;
+        const counts = {
+            hero: Boolean(hero),
+            recent: recent?.length || 0,
+            movies: movies?.data?.length || 0,
+            series: series?.data?.length || 0
+        };
+
+        console.info('[catalog] landing data counts', counts);
+
+        if (!counts.hero && counts.recent === 0 && counts.movies === 0 && counts.series === 0) {
+            return res.status(404).json({ success: false, error: 'Catalogo vacio o sin permisos para leerlo' });
+        }
+
         res.json({
             success: true,
             data: {
-                hero: random[0] || null,
+                hero,
                 recent: recent,
                 movies: movies.data,
                 series: series.data
@@ -137,20 +152,6 @@ async function deleteStream(req, res) {
         res.status(500).json({ success: false, error: e.message });
     }
 }
-
-module.exports = {
-    getStats,
-    getCatalogData,
-    searchTitles,
-    getTitle,
-    saveTitle,
-    deleteTitle,
-    deleteStream,
-    saveStream,
-    importMegaToTitle
-};
-
-// -- New Methods --
 
 async function saveStream(req, res) {
     try {
@@ -319,6 +320,45 @@ async function streamContent(req, res) {
     }
 }
 
+
+async function debugTitles(req, res) {
+    try {
+        const client = getClient(req);
+        const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
+        const { data, error } = await client
+            .from('cxv_title')
+            .select('*, cxv_stream(count)')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (error) throw error;
+
+        res.json({ success: true, count: data?.length || 0, data });
+    } catch (e) {
+        console.error("[debugTitles] error", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+}
+
+async function debugStreams(req, res) {
+    try {
+        const client = getClient(req);
+        const limit = Math.min(parseInt(req.query.limit || '100', 10), 500);
+        const { data, error } = await client
+            .from('cxv_stream')
+            .select('*, cxv_title (name, type, year)')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (error) throw error;
+
+        res.json({ success: true, count: data?.length || 0, data });
+    } catch (e) {
+        console.error("[debugStreams] error", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+}
+
 module.exports = {
     getStats,
     getCatalogData,
@@ -330,5 +370,7 @@ module.exports = {
     saveStream,
     importMegaToTitle,
     streamContent,
-    importFromImdb
+    importFromImdb,
+    debugTitles,
+    debugStreams
 };

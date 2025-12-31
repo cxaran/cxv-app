@@ -185,7 +185,7 @@
     <script>
         const SUPABASE_URL = '{{SUPABASE_URL}}';
         const SUPABASE_KEY = '{{SUPABASE_KEY}}';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let authToken = null;
         let currentStreams = [];
         let activeSeason = null;
@@ -195,7 +195,7 @@
         const id = paths[paths.length - 1];
 
         async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (!session) { window.location.href = '/login'; return; }
             authToken = session.access_token;
 

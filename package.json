@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "npx nodemon server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.2",

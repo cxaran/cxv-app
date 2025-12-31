@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const apiRoutes = require('./routes/api.routes');
 const viewRoutes = require('./routes/view.routes');
 
@@ -6,6 +7,7 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors()); // allow cross-origin requests for the UI/API
 
 // Debug Startup
 console.log(`[DEBUG] Loading app.js from ${__filename}`);
